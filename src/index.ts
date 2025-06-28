@@ -32,6 +32,10 @@ export {
   createCachedFileSystem,
   type CachedFileSystemOptions
 } from './cached';
+export {
+  GitHubFileSystem,
+  type GitHubFileSystemOptions
+} from './github';
 
 // Asynchronous implementations
 export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
@@ -49,3 +53,26 @@ export {
   JsonStringifyError as AsyncJsonStringifyError,
   JsonValidationError as AsyncJsonValidationError
 } from './promises/json';
+export {
+  AnalyticsFileSystem as AsyncAnalyticsFileSystem,
+  createAnalyticsFileSystem as createAsyncAnalyticsFileSystem,
+  type AnalyticsFileSystemOptions as AsyncAnalyticsFileSystemOptions,
+  type Stats as AsyncStats,
+  type FileAccess as AsyncFileAccess,
+  type FileAction as AsyncFileAction,
+  type AnalyticsStatsEvent as AsyncAnalyticsStatsEvent
+} from './promises/analytics';
+export {
+  WithIdFileSystem as AsyncWithIdFileSystem,
+  FileFormat as AsyncFileFormat,
+  type FileMetadata as AsyncFileMetadata
+} from './promises/with-id';
+export {
+  CachedFileSystem as AsyncCachedFileSystem,
+  createCachedFileSystem as createAsyncCachedFileSystem,
+  type CachedFileSystemOptions as AsyncCachedFileSystemOptions
+} from './promises/cached';
+export {
+  GitHubFileSystem as AsyncGitHubFileSystem,
+  type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions
+} from './promises/github';

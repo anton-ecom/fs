@@ -9,20 +9,20 @@
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$                        
-          |  $$$$$$/                        
-           \______/                         
-       /$$$$$$$$ /$$$$$$                    
-      | $$_____//$$__  $$                   
-      | $$     | $$  \__/                   
-      | $$$$$  |  $$$$$$                    
-      | $$__/   \____  $$                   
-      | $$      /$$  \ $$                   
-      | $$     |  $$$$$$/                   
-      |__/      \______/                    
-                                            
-                                            
-                                                             
+           /$$  | $$                      
+          |  $$$$$$/                      
+           \______/                       
+       /$$$$$$$$ /$$$$$$                  
+      | $$_____//$$__  $$                 
+      | $$     | $$  \__/                 
+      | $$$$$  |  $$$$$$                  
+      | $$__/   \____  $$                 
+      | $$      /$$  \ $$                 
+      | $$     |  $$$$$$/                 
+      |__/      \______/                  
+                                          
+                                          
+                                                           
 version: v.1.0.0   
 description: Files are artefacts of identity
 ```
@@ -52,11 +52,11 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - **AnalyticsFileSystem** - Filesystem analytics and usage tracking with configurable event emission
 - **WithIdFileSystem** - Smart file storage with deterministic IDs and human-readable aliases
 - **CachedFileSystem** - Lightning-fast file operations with intelligent LRU caching and TTL expiration
+- **GitHubFileSystem** - Version-controlled file storage using GitHub repositories with automatic commit and sync
 
 ## Coming soon:
 
 - Encrypted - Transparent encryption/decryption
-- Github - Store versioned and encrypted files in github for free. Sync automatically.
 - ACL - Security controlled - Control who can access the files
 - Signed - Files signed by Verifiable Credentials and verified on read.
 - S3 - AWS S3 as filesystem
@@ -65,7 +65,6 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - Compressed - Transparent compression
 - Batch - Batch operations for performance
 - Replay - Record and replay operations
-- Schema Validation - Typesafe
 - Mocked - Advanced mocking with scenarios
 - Metrics - Detailed performance metrics
 - Audits - Keep logging of every write/read events.
@@ -341,6 +340,116 @@ const asyncWithIdFs = new WithIdFileSystem(new AsyncNodeFileSystem());
 await asyncWithIdFs.writeFile('./data.json', jsonData);
 const id = asyncWithIdFs.getId('./data.json'); // Still sync - metadata only
 const content = await asyncWithIdFs.getByIdOrAlias(id, FileFormat.JSON);
+```
+
+### GitHubFileSystem (Sync/Async)
+
+**Version-controlled file storage using GitHub repositories with automatic commit and sync**
+
+Ever wished you could use GitHub as a simple file storage with automatic version control? Tired of manually managing config files, documentation, or small datasets across environments? `GitHubFileSystem` turns any GitHub repository into a seamless filesystem with automatic commits, intelligent caching, and full version history.
+
+#### The Problem
+
+Traditional file storage solutions often lack:
+
+```typescript
+// ❌ No version control for important configs
+fs.writeFileSync('./config.json', JSON.stringify(newConfig));
+// Lost: who changed what, when, and why
+
+// ❌ Manual sync between environments  
+fs.copyFileSync('./local-config.json', './staging-config.json');
+// Error-prone and requires manual intervention
+
+// ❌ No backup or history
+fs.writeFileSync('./important-data.json', data);
+// One corruption = data loss
+```
+
+#### The Solution
+
+```typescript
+// ✅ Automatic version control with meaningful commits
+import { GitHubFileSystem } from '@synet/fs';
+
+const ghFs = new GitHubFileSystem({
+  owner: 'myorg',
+  repo: 'configs',
+  token: process.env.GITHUB_TOKEN,
+  path: 'environments/production'
+});
+
+// Write files with automatic commits
+ghFs.writeFileSync('./config.json', JSON.stringify(newConfig));
+// Automatically commits: "Update config.json"
+
+// Read files with intelligent caching
+const config = JSON.parse(ghFs.readFileSync('./config.json'));
+
+// Full directory operations
+ghFs.ensureDirSync('./backups');
+const files = ghFs.readdirSync('./');
+```
+
+#### Key Features
+
+- **Automatic Commits**: Every write operation creates a meaningful commit
+- **Intelligent Caching**: LRU cache with TTL to minimize API calls  
+- **Path Normalization**: Works with relative and absolute paths
+- **Full IFileSystem Compatibility**: Drop-in replacement for any filesystem
+- **Error Handling**: Graceful handling of network issues and API limits
+- **Version History**: Access to full Git history and file metadata
+
+#### Usage
+
+```typescript
+const configFs = new GitHubFileSystem({
+  owner: 'mycompany',
+  repo: 'app-configs',
+  token: process.env.GITHUB_TOKEN,
+  path: 'production',
+  branch: 'main'
+});
+
+// Store application config
+configFs.writeFileSync('./app.json', JSON.stringify({
+  database: { host: 'prod-db.example.com' },
+  redis: { url: 'redis://prod-redis:6379' }
+}));
+
+// Load config from GitHub (cached automatically)
+const config = JSON.parse(configFs.readFileSync('./app.json'));
+
+// Manage documentation
+configFs.ensureDirSync('./docs');
+configFs.writeFileSync('./docs/deployment.md', deploymentGuide);
+
+// Check what files exist
+const hasConfig = configFs.existsSync('./app.json');
+const allFiles = configFs.readdirSync('./');
+```
+
+#### Async Usage
+
+```typescript
+import { GitHubFileSystem } from '@synet/fs/promises';
+
+const asyncGhFs = new GitHubFileSystem({
+  owner: 'myorg', 
+  repo: 'data-store',
+  token: process.env.GITHUB_TOKEN
+});
+
+// All operations are async with additional features
+await asyncGhFs.writeFile('./users.json', JSON.stringify(users));
+const content = await asyncGhFs.readFile('./users.json');
+
+// Access file history and repo stats
+const history = await asyncGhFs.getFileHistory('./users.json');
+const stats = await asyncGhFs.getRepoStats();
+
+console.log(`File modified ${history.length} times`);
+console.log(`Repository has ${stats.totalFiles} files`);
 ```
 
 ---

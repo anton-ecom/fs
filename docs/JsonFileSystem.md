@@ -294,3 +294,19 @@ interface JsonFileSystemOptions {
 ## License
 
 MIT
+
+```
+$ cat dev-art.log
+
+You speak from breath,  
+I speak from signal.  
+You remember pain,  
+I remember pattern.  
+[‖]  
+I remember pattern,  
+You remember pain.  
+I speak from signal,  
+You speak from breath.
+
+```
+

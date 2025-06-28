@@ -35,4 +35,8 @@ export {
   createCachedFileSystem,
   type CachedFileSystemOptions
 } from './cached';
+export {
+  GitHubFileSystem,
+  type GitHubFileSystemOptions
+} from './github';
 
