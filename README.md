@@ -575,6 +575,10 @@ Filesystems are far more flexible architectural solution than storing data in My
  - Auto-backup
  - Multi-ACL - part is public, part is private, encrypted.
  - Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
+ - Remote control - VM as file.
+ - Licensing
+
+> Data is new gold. 
 
 Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)  
 
