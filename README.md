@@ -36,7 +36,7 @@ npm i @synet/fs
 
 ## Overview
 
-This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. There's more, consisten use of interface and filesystem injection pattern avoids mixing sync and async in one component, petting Zalgo.
+This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released.)
 
 **Why so much attention to FS, when there's mysql ?**
 
@@ -148,7 +148,7 @@ const cachedFs = new CachedFileSystem(encryptedFs);
 
 ### 4. Unleashed **Zalgo**
 
-Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "unleashing Zalgo":
+Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "[unleashing Zalgo](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
 
 ```typescript
 // ❌ BAD: Mixed sync/async in one component - Zalgo unleashed!
