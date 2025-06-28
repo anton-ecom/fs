@@ -1,5 +1,5 @@
 import { fs as memfs } from "memfs";
-import type { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+import type { IAsyncFileSystem, FileStats } from "@synet/patterns/filesystem/promises";
 
 /**
  * In-memory file system implementation using memfs
@@ -101,5 +101,20 @@ export class MemFileSystem implements IAsyncFileSystem {
     } catch (error) {
       throw new Error(`Failed to clear in-memory file system: ${error}`);
     }
+  }
+
+    async stat(path: string): Promise<FileStats> {
+    const stats = await memfs.promises.stat(path);
+
+    return {
+      isFile: () => stats.isFile(),
+      isDirectory: () => stats.isDirectory(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: Number(stats.size),
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime,
+      mode: Number(stats.mode),
+    };
   }
 }

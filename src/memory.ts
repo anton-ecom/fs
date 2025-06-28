@@ -1,5 +1,5 @@
 import { fs as memfs } from "memfs";
-import type { IFileSystem } from "@synet/patterns/filesystem";
+import type { IFileSystem, FileStats } from "@synet/patterns/filesystem";
 /**
  * In-memory file system implementation using memfs
  */
@@ -107,4 +107,21 @@ export class MemFileSystem implements IFileSystem {
       throw new Error(`Failed to clear in-memory file system: ${error}`);
     }
   }
+
+    stat(path: string): FileStats {
+      const stats = memfs.statSync(path);
+      if (!stats) {
+        throw new Error(`Failed to get stats for ${path}`);
+      }
+      return {
+        isFile: () => stats.isFile(),
+        isDirectory: () => stats.isDirectory(),
+        isSymbolicLink: () => stats.isSymbolicLink(),
+        size: Number(stats.size),
+        mtime: stats.mtime,
+        ctime: stats.ctime,
+        atime: stats.atime,
+        mode: Number(stats.mode),
+      };
+    }
 }

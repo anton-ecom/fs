@@ -1,6 +1,6 @@
 
 import fs from "node:fs";
-import type { IFileSystem } from "@synet/patterns/filesystem";
+import type { IFileSystem, FileStats } from "@synet/patterns/filesystem";
 
 /**
  * Node.js implementation of FileSystem interface
@@ -60,6 +60,22 @@ export class NodeFileSystem implements IFileSystem {
     } catch (error) {
       throw new Error(`Failed to change permissions for ${path}: ${error}`);
     }
+  }
+
+
+  statSync(path: string): FileStats {
+    const stats = fs.statSync(path);
+
+    return {
+      isFile: () => stats.isFile(),
+      isDirectory: () => stats.isDirectory(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: stats.size,
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime,
+      mode: stats.mode,
+    };
   }
 
 }

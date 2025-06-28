@@ -1,5 +1,5 @@
 import * as fs from "node:fs/promises";
-import type { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+import type { IAsyncFileSystem, FileStats } from "@synet/patterns/filesystem/promises";
 
 /**
  * Node.js implementation of FileSystem interface
@@ -62,4 +62,20 @@ export class NodeFileSystem implements IAsyncFileSystem {
   async chmod(path: string, mode: number): Promise<void> {
     return fs.chmod(path, mode);
   }
+
+  async stat(path: string): Promise<FileStats> {
+    const stats = await fs.stat(path);
+    
+    return {
+      isFile: () => stats.isFile(),
+      isDirectory: () => stats.isDirectory(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: stats.size,
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime,
+      mode: stats.mode,
+    };
+  }
+  
 }
