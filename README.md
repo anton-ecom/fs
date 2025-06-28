@@ -27,16 +27,17 @@ version: v.1.0.0
 description: Files are artefacts of identity
 ```
 
+**Installation**:
+
 ```
 npm i @synet/fs
-
 ```
 
 # Filesystem Pattern Implementations
 
 ## Overview
 
-This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released.)
+This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released).
 
 **Why so much attention to FS, when there's mysql ?**
 
@@ -51,7 +52,7 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 ## Coming soon:
 
 - Encrypted - Transparent encryption/decryption
-- Github - Store and version your files in github for free
+- Github - Store versioned and encrypted files in github for free. Sync automatically.
 - ACL - Security controlled - Control who can access the files
 - Signed - Files signed by Verifiable Credentials and verified on read.
 - S3 - AWS S3 as filesystem
@@ -65,7 +66,6 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - Mocked - Advanced mocking with scenarios
 - Metrics - Detailed performance metrics
 - Audits - Keep logging of every write/read events. 
-- Highly Secured FS - Emit remote events to NATS Broker who accessed files and why, mark classified files, protect access through 2FA, limit who can access with VCs. 
 - Analytics - keep detailed analytics of access and actions (remotely with realtime event/broker)
 - Versioned - simplified git
 - Synced - keep localfiles, but sync them to S3.
@@ -76,12 +76,13 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - Meta - store files with rich metadata, quickly list/find files by meta keys.
 - Paid - lock/unlock files/folders for users with NKeys or by issuing DID VCs, via event observer. Verifiable proof and with selective disclosure.
 - Unique - write same files, with each storing its historical context.
+- Auto-backup - automatically back-up your files with versions.
+- Highly Secured (HSFS) - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why. Mark classified files, protect access through 2FA/VC/NKeys.
 
 **Distributed**:
 
 - DHT - custom distributed filesystem.
 - File-sharing - automatically share selected files to all your services via DHT/IPFS.
-
 
 ## Why Use This Over Traditional `fs`?
 
@@ -146,7 +147,7 @@ const cachedFs = new CachedFileSystem(encryptedFs);
 
 // ...existing code...
 
-### 4. Unleashed **Zalgo**
+### 4. Do Not Release Zalgo
 
 Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "[unleashing Zalgo](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
 
@@ -557,6 +558,24 @@ I've implemented over a hundred of versions of filesystems over last few decades
 
 Filesystems are far more flexible architectural solution than storing data in Mysql with far greater security and future extention options. When coupled with [Remote Event](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) you can observe, process and act on all filesystem requests - something can't be done with Mysql.
 
- I've developed highly secure filesystems for enterprises, that I can't share here. If you want one of them, [let me know](emailto:anton@synthetism.ai)  
+ As mentioned before, I've developed highly secure filesystems (**HSFS**) for enterprises and security firms.
+
+ **Some features**:
+
+ - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why.
+ - Mark classified files, protect access through 2FA/VC/NKeys. 
+ - Limit scope of  access with VCs and identity who wrote the file. 
+ - Keep history of access as part of the file. 
+ - Integiry checks, violation flags, time-limit, auto-destruct, penetration alerts, readonly, writeonly, indestructable with auto-restoring. 
+ - Selective disclosure protocols (text only), classification markings, traps (altered byte-sequencing/embedded ids for each read).
+ - ZKF/ZKF - Zero Knowledge Files - proof you ownership without revealing its contents.
+ - Passes - multi-user access with passwords. One-time, time-bound passwords.
+ - KYC - Store structured history of access with schemas. 
+ - Multi-sig
+ - Auto-backup
+ - Multi-ACL - part is public, part is private, encrypted.
+ - Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
+
+Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)  
 
 Stay tuned new versions or ask anything from [REQUESTS][[https://github](https://github.com/synthetism/fs/blob/main/REQUESTS.md)]

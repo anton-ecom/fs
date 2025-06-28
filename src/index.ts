@@ -1,7 +1,4 @@
-// @synet/identity/src/shared/filesystem/index.ts
-
 // Synchronous implementations
-export { IFileSystem } from './filesystem.interface';
 export { NodeFileSystem } from './filesystem';
 export { MemFileSystem } from './memory';
 export { 
