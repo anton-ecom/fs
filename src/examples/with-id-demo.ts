@@ -52,19 +52,19 @@ export function demonstrateWithIdFileSystem() {
   const docId = withIdFs.getId(docPath);
   const docAlias = withIdFs.getAlias(docPath);
   
-  console.log(`📄 User Profile:`);
+  console.log('User Profile:');
   console.log(`   ID: ${profileId}`);
   console.log(`   Alias: ${profileAlias}`);
   
-  console.log(`⚙️  App Config:`);
+  console.log('App Config:');
   console.log(`   ID: ${configId}`);
   console.log(`   Alias: ${configAlias}`);
   
-  console.log(`📚 Documentation:`);
+  console.log('Documentation:');
   console.log(`   ID: ${docId}`);
   console.log(`   Alias: ${docAlias}\n`);
 
-  console.log('3️⃣ Reading files using different methods...');
+  console.log('Reading files using different methods...');
   
   // Read by original path
   console.log('📂 Reading by original path:');
@@ -88,8 +88,8 @@ export function demonstrateWithIdFileSystem() {
   try {
     // Should work - correct format
     const configData = withIdFs.getByIdOrAlias(configId, FileFormat.JSON);
-    console.log(`✅ JSON format validation passed`);
-    
+    console.log('✅ JSON format validation passed');
+
     // Should fail - wrong format
     withIdFs.getByIdOrAlias(configId, FileFormat.PDF);
   } catch (error: unknown) {
@@ -180,7 +180,7 @@ export function demonstrateWithIdFileSystem() {
         if (memFs.existsSync(fullPath) && !item.includes(':')) {
           // It's a directory
           console.log(`${indent}📁 ${item}/`);
-          listStoredFiles(fullPath, indent + '  ');
+          listStoredFiles(fullPath, `${indent}  `);
         } else if (item.includes(':')) {
           // It's a stored file with our format
           console.log(`${indent}📄 ${item}`);
