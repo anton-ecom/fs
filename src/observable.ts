@@ -1,5 +1,5 @@
 import { EventEmitter, type Event } from '@synet/patterns';
-import type { IFileSystem } from "@synet/patterns/filesystem";
+import type { IFileSystem, FileStats } from "@synet/patterns/filesystem";
 
 export enum FilesystemEventTypes {
   EXISTS = 'file.exists',
@@ -10,13 +10,14 @@ export enum FilesystemEventTypes {
   ENSURE_DIR = 'file.ensureDir',
   DELETE_DIR = 'file.deleteDir',
   READ_DIR = 'file.readDir',
+  STAT = 'file.stat',
 }
 
 export interface FilesystemEvent extends Event {
   type: FilesystemEventTypes;
   data: {
     filePath: string;
-    operation: 'read' | 'write' | 'delete' | 'exists' | 'chmod' | 'ensureDir' | 'deleteDir' | 'readDir';
+    operation: 'read' | 'write' | 'delete' | 'exists' | 'chmod' | 'ensureDir' | 'deleteDir' | 'readDir' | 'stat';
     result?: unknown;
     error?: Error;
   };
@@ -254,6 +255,41 @@ export class ObservableFileSystem implements IFileSystem {
           data: {
             filePath: path,
             operation: 'chmod',
+            error: error as Error
+          }
+        });
+      }
+      throw error;
+    }
+  }
+
+  statSync(path: string): FileStats {
+    if (!this.baseFilesystem.statSync) {
+      throw new Error('Base filesystem does not support statSync operation');
+    }
+    
+    try {
+      const result = this.baseFilesystem.statSync(path);
+      
+      if (this.shouldEmit(FilesystemEventTypes.STAT)) {
+        this.eventEmitter.emit({
+          type: FilesystemEventTypes.STAT,
+          data: {
+            filePath: path,
+            operation: 'stat',
+            result: result.size
+          }
+        });
+      }
+
+      return result;
+    } catch (error) {
+      if (this.shouldEmit(FilesystemEventTypes.STAT)) {
+        this.eventEmitter.emit({
+          type: FilesystemEventTypes.STAT,
+          data: {
+            filePath: path,
+            operation: 'stat',
             error: error as Error
           }
         });

@@ -9,20 +9,20 @@
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$                      
-          |  $$$$$$/                      
-           \______/                       
-       /$$$$$$$$ /$$$$$$                  
-      | $$_____//$$__  $$                 
-      | $$     | $$  \__/                 
-      | $$$$$  |  $$$$$$                  
-      | $$__/   \____  $$                 
-      | $$      /$$  \ $$                 
-      | $$     |  $$$$$$/                 
-      |__/      \______/                  
-                                          
-                                          
-                                                           
+           /$$  | $$                    
+          |  $$$$$$/                    
+           \______/                     
+       /$$$$$$$$ /$$$$$$                
+      | $$_____//$$__  $$               
+      | $$     | $$  \__/               
+      | $$$$$  |  $$$$$$                
+      | $$__/   \____  $$               
+      | $$      /$$  \ $$               
+      | $$     |  $$$$$$/               
+      |__/      \______/                
+                                        
+                                        
+                                                         
 version: v.1.0.0   
 description: Files are artefacts of identity
 ```
@@ -53,13 +53,13 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - **WithIdFileSystem** - Smart file storage with deterministic IDs and human-readable aliases
 - **CachedFileSystem** - Lightning-fast file operations with intelligent LRU caching and TTL expiration
 - **GitHubFileSystem** - Version-controlled file storage using GitHub repositories with automatic commit and sync
+- **S3FileSystem** - AWS S3 cloud storage with local filesystem interface and intelligent caching
 
 ## Coming soon:
 
 - Encrypted - Transparent encryption/decryption
 - ACL - Security controlled - Control who can access the files
 - Signed - Files signed by Verifiable Credentials and verified on read.
-- S3 - AWS S3 as filesystem
 - IPFS - IPFS distributed storage
 - WebDav - WebDAV protocol support
 - Compressed - Transparent compression
@@ -260,7 +260,7 @@ observableFs.getEventEmitter().subscribe(FilesystemEventTypes.WRITE, {
 
 Ever struggled with the classic dilemma: use meaningful filenames for humans or stable IDs for databases? `WithIdFileSystem` solves this beautifully by giving every file both - a deterministic ID for your database keys and a readable alias for human reference.
 
-#### The Problem
+#### Before
 
 Traditional approaches force you to choose:
 
@@ -275,7 +275,7 @@ const filename = `${uuid()}.json`;
 const fileRegistry = new Map<string, string>(); // ID -> filename
 ```
 
-#### The Solution
+#### After
 
 ```typescript
 // ✅ Best of both worlds
@@ -346,9 +346,9 @@ const content = await asyncWithIdFs.getByIdOrAlias(id, FileFormat.JSON);
 
 **Version-controlled file storage using GitHub repositories with automatic commit and sync**
 
-Ever wished you could use GitHub as a simple file storage with automatic version control? Tired of manually managing config files, documentation, or small datasets across environments? `GitHubFileSystem` turns any GitHub repository into a seamless filesystem with automatic commits, intelligent caching, and full version history.
+What if you could use GitHub as a simple file storage with automatic version control? Tired of manually managing config files, documentation, or small datasets across environments? `GitHubFileSystem` turns any GitHub repository into a seamless filesystem with automatic commits, intelligent caching, and full version history.
 
-#### The Problem
+#### Before
 
 Traditional file storage solutions often lack:
 
@@ -366,7 +366,9 @@ fs.writeFileSync('./important-data.json', data);
 // One corruption = data loss
 ```
 
-#### The Solution
+#### After
+
+Just use github.
 
 ```typescript
 // ✅ Automatic version control with meaningful commits
@@ -394,7 +396,7 @@ const files = ghFs.readdirSync('./');
 #### Key Features
 
 - **Automatic Commits**: Every write operation creates a meaningful commit
-- **Intelligent Caching**: LRU cache with TTL to minimize API calls  
+- **Intelligent Caching**: LRU cache with TTL to minimize API calls
 - **Path Normalization**: Works with relative and absolute paths
 - **Full IFileSystem Compatibility**: Drop-in replacement for any filesystem
 - **Error Handling**: Graceful handling of network issues and API limits
@@ -452,6 +454,92 @@ console.log(`File modified ${history.length} times`);
 console.log(`Repository has ${stats.totalFiles} files`);
 ```
 
+### S3FileSystem (Sync/Async)
+
+**AWS S3 cloud storage with local filesystem interface and intelligent caching**
+
+Need to store files in the cloud but want to keep using the familiar filesystem interface? `S3FileSystem` makes AWS S3 feel like a local drive with smart caching, automatic content type detection, and seamless bucket operations. Perfect for cloud-native applications that need scalable file storage without the complexity.
+
+#### Perfect For
+
+- **Cloud-native applications**: Store files in S3 with local filesystem simplicity
+- **Configuration management**: Keep config files in S3 buckets with easy access
+- **Document storage**: Handle uploads, downloads, and file organization
+- **Multi-environment deployments**: Same code works locally and in production
+- **Distributed systems**: Share files across services via S3
+
+#### Basic Usage
+
+```typescript
+import { S3FileSystem } from '@synet/fs';
+
+// Simple setup with default credentials
+const s3fs = new S3FileSystem({
+  region: 'us-east-1',
+  bucket: 'my-app-files'
+});
+
+// Write files to S3 like local filesystem
+s3fs.writeFileSync('config/app.json', JSON.stringify(config));
+s3fs.writeFileSync('uploads/image.jpg', imageBuffer);
+
+// Read files from S3
+const config = JSON.parse(s3fs.readFileSync('config/app.json'));
+const exists = s3fs.existsSync('uploads/image.jpg');
+
+// List S3 "directories"
+const files = s3fs.readDirSync('uploads/');
+
+// File operations
+const stats = s3fs.statSync('config/app.json');
+console.log(`File size: ${stats.size} bytes`);
+```
+
+#### Advanced Configuration
+
+```typescript
+const s3fs = new S3FileSystem({
+  region: 'eu-west-1',
+  bucket: 'production-storage',
+  prefix: 'app-data/',           // All files prefixed with 'app-data/'
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  endpoint: 'https://s3.example.com',  // For S3-compatible services
+  forcePathStyle: true            // For non-AWS S3 services
+});
+
+// Files are stored at: s3://production-storage/app-data/...
+```
+
+#### Async Usage
+
+```typescript
+import { S3FileSystem } from '@synet/fs/promises';
+
+const asyncS3fs = new S3FileSystem({
+  region: 'us-west-2',
+  bucket: 'async-storage'
+});
+
+// All operations return promises
+await asyncS3fs.writeFile('data.json', jsonData);
+const content = await asyncS3fs.readFile('data.json');
+const files = await asyncS3fs.readDir('uploads/');
+const stats = await asyncS3fs.stat('important.pdf');
+
+// Smart caching - second read uses cache
+const cachedContent = await asyncS3fs.readFile('data.json'); // No S3 call
+```
+
+#### Key Features
+
+- **Intelligent caching**: Files and metadata cached in memory for performance
+- **Content type detection**: Automatic MIME type setting based on file extension
+- **Path normalization**: Handles various path formats consistently
+- **Prefix support**: Namespace files with bucket prefixes
+- **Error handling**: Graceful handling of S3 errors and edge cases
+- **S3-compatible**: Works with AWS S3 and compatible services (MinIO, DigitalOcean Spaces)
+
 ---
 
 ## Basic Examples
@@ -483,7 +571,7 @@ const asyncConfigService = new AsyncConfigService(new AsyncNodeFileSystem());
 const config = await asyncConfigService.loadConfig();
 ```
 
-### Basic Sync Usage
+### Sync Usage
 
 ```typescript
 import { IFileSystem } from './filesystem.interface';
@@ -514,43 +602,6 @@ const configService = new ConfigService(new NodeFileSystem());
 const configService = new ConfigService(new MemFileSystem());
 ```
 
-### Observable Pattern with Event Monitoring
-
-```typescript
-import { ObservableFileSystem, FilesystemEventTypes } from './observable.interface';
-
-// Create observable filesystem
-const observableFs = new ObservableFileSystem(new NodeFileSystem());
-
-// Set up monitoring
-const logger = {
-  update(event: FilesystemEvent) {
-    const { filePath, operation, result, error } = event.data;
-  
-    if (error) {
-      console.error(`❌ ${operation} failed on ${filePath}:`, error.message);
-    } else {
-      console.log(`✅ ${operation} on ${filePath} ${result ? `(${result})` : ''}`);
-    }
-  }
-};
-
-// Monitor all operations
-Object.values(FilesystemEventTypes).forEach(eventType => {
-  observableFs.getEventEmitter().subscribe(eventType, logger);
-});
-
-// Or monitor specific operations
-observableFs.getEventEmitter().subscribe(FilesystemEventTypes.WRITE, {
-  update(event) {
-    console.log(`📝 File written: ${event.data.filePath} (${event.data.result} bytes)`);
-  }
-});
-
-// Use the filesystem normally
-const configService = new ConfigService(observableFs);
-configService.saveConfig({ theme: 'dark' }); // Will trigger events
-```
 
 ### Testing with In-Memory Filesystem
 
@@ -583,129 +634,6 @@ describe('ConfigService', () => {
   });
 });
 ```
-
-### Advanced: Multiple Decorators
-
-```typescript
-// Create a filesystem with multiple capabilities
-class CachedFileSystem implements IFileSystem {
-  private cache = new Map<string, string>();
-  
-  constructor(private baseFs: IFileSystem) {}
-  
-  readFileSync(path: string): string {
-    if (this.cache.has(path)) {
-      return this.cache.get(path)!;
-    }
-  
-    const content = this.baseFs.readFileSync(path);
-    this.cache.set(path, content);
-    return content;
-  }
-  
-  writeFileSync(path: string, data: string): void {
-    this.baseFs.writeFileSync(path, data);
-    this.cache.set(path, data); // Update cache
-  }
-  
-  // Implement other methods...
-}
-
-// Compose multiple decorators
-const baseFs = new NodeFileSystem();
-const observableFs = new ObservableFileSystem(baseFs);
-const cachedFs = new CachedFileSystem(observableFs);
-
-// Now you have: real filesystem + observability + caching
-const service = new ConfigService(cachedFs);
-```
-
-## Event Types
-
-The `ObservableFileSystem` emits the following events:
-
-| Event Type         | Description          | Event Data                                                 |
-| ------------------ | -------------------- | ---------------------------------------------------------- |
-| `file.exists`    | File existence check | `{ filePath, operation: 'exists', result: boolean }`     |
-| `file.read`      | File read operation  | `{ filePath, operation: 'read', result: contentLength }` |
-| `file.write`     | File write operation | `{ filePath, operation: 'write', result: dataLength }`   |
-| `file.delete`    | File deletion        | `{ filePath, operation: 'delete' }`                      |
-| `file.chmod`     | Permission change    | `{ filePath, operation: 'chmod', result: mode }`         |
-| `file.ensureDir` | Directory creation   | `{ filePath, operation: 'ensureDir' }`                   |
-| `file.deleteDir` | Directory deletion   | `{ filePath, operation: 'deleteDir' }`                   |
-| `file.readDir`   | Directory listing    | `{ filePath, operation: 'readDir', result: fileCount }`  |
-
-All events include error information if the operation fails:
-
-```typescript
-{
-  filePath: string;
-  operation: string;
-  error?: Error;
-  result?: unknown;
-}
-```
-
-## Benefits
-
-1. **Testability**: Easy to mock and test without touching the real filesystem
-2. **Flexibility**: Swap implementations based on environment or requirements
-3. **Observability**: Monitor file operations with the observable pattern
-4. **Composition**: Layer functionality through the decorator pattern
-5. **Type Safety**: Full TypeScript support with proper interfaces
-6. **Consistency**: Uniform API across sync and async operations
-7. **Environment Agnostic**: Works in Node.js, browsers (with appropriate implementations), or other JavaScript environments
-
-## Architecture
-
-```
-┌─────────────────┐
-│   Your Service  │
-└─────────┬───────┘
-          │ uses IFileSystem interface
-          ▼
-┌─────────────────┐    ┌──────────────────┐
-│ ObservableFS    │───▶│  EventEmitter    │
-└─────────┬───────┘    └──────────────────┘
-          │ decorates
-          ▼
-┌─────────────────┐
-│   NodeFS or     │
-│   MemFS         │
-└─────────────────┘
-```
-
-This pattern enables building robust, testable, and observable file-based applications while maintaining clean separation of concerns.
-
-## Examples
-
-Complete working examples are available in the `examples/` directory:
-
-- **`config-service.example.ts`** - Demonstrates basic usage, observable patterns, and advanced composition
-- **`config-service.test.ts`** - Shows comprehensive testing strategies with different filesystem implementations
-
-Run the examples:
-
-```typescript
-// Basic demonstration
-import { demonstrateFilesystemPattern } from './examples/config-service.example';
-demonstrateFilesystemPattern();
-
-// Advanced composition patterns
-import { demonstrateAdvancedComposition } from './examples/config-service.example';
-demonstrateAdvancedComposition();
-```
-
-The examples showcase:
-
-- ✅ **Dependency injection** for easy testing
-- ✅ **Multiple implementations** (real filesystem vs in-memory)
-- ✅ **Observable pattern** for monitoring file operations
-- ✅ **Decorator pattern** for composing functionality (caching + observability)
-- ✅ **Error handling** and event capturing
-- ✅ **Comprehensive testing** with isolated, fast tests
-
-These patterns help you build maintainable, testable applications that can adapt to different environments and requirements.
 
 ## ** Complex Compositions ~Pyramids of Doom~  Examples**
 
