@@ -16,4 +16,13 @@ export {
   JsonStringifyError,
   JsonValidationError
 } from './json';
+export {
+  AnalyticsFileSystem,
+  createAnalyticsFileSystem,
+  type AnalyticsFileSystemOptions,
+  type Stats,
+  type FileAccess,
+  type FileAction,
+  type AnalyticsStatsEvent
+} from './analytics';
 

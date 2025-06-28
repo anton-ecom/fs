@@ -49,11 +49,11 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - **Memory** - memfs - In-memory filesystem for testing  
 - **Observable** - observe any IFileSystem events with EventEmitter/Observer pattern
 - **JsonFileSystem** - Type-safe JSON file operations with automatic parsing/stringification
+- **AnalyticsFileSystem** - Filesystem analytics and usage tracking with configurable event emission
 
 ## Coming soon:
 
 - Typesage
-- Analytics
 - Encrypted - Transparent encryption/decryption
 - Github - Store versioned and encrypted files in github for free. Sync automatically.
 - ACL - Security controlled - Control who can access the files
