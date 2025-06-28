@@ -22,6 +22,16 @@ export {
   type FileAction,
   type AnalyticsStatsEvent
 } from './analytics';
+export {
+  WithIdFileSystem,
+  FileFormat,
+  type FileMetadata
+} from './with-id';
+export {
+  CachedFileSystem,
+  createCachedFileSystem,
+  type CachedFileSystemOptions
+} from './cached';
 
 // Asynchronous implementations
 export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';

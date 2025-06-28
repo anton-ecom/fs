@@ -9,20 +9,20 @@
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$                            
-          |  $$$$$$/                            
-           \______/                             
-       /$$$$$$$$ /$$$$$$                        
-      | $$_____//$$__  $$                       
-      | $$     | $$  \__/                       
-      | $$$$$  |  $$$$$$                        
-      | $$__/   \____  $$                       
-      | $$      /$$  \ $$                       
-      | $$     |  $$$$$$/                       
-      |__/      \______/                        
-                                                
-                                                
-                                                                 
+           /$$  | $$                        
+          |  $$$$$$/                        
+           \______/                         
+       /$$$$$$$$ /$$$$$$                    
+      | $$_____//$$__  $$                   
+      | $$     | $$  \__/                   
+      | $$$$$  |  $$$$$$                    
+      | $$__/   \____  $$                   
+      | $$      /$$  \ $$                   
+      | $$     |  $$$$$$/                   
+      |__/      \______/                    
+                                            
+                                            
+                                                             
 version: v.1.0.0   
 description: Files are artefacts of identity
 ```
@@ -46,14 +46,15 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 ## In package
 
 - **NodeFilesystem** - Standard Wrapper of node:fs and node:fs/promises
-- **Memory** - memfs - In-memory filesystem for testing  
+- **Memory** - memfs - In-memory filesystem for testing
 - **Observable** - observe any IFileSystem events with EventEmitter/Observer pattern
 - **JsonFileSystem** - Type-safe JSON file operations with automatic parsing/stringification
 - **AnalyticsFileSystem** - Filesystem analytics and usage tracking with configurable event emission
+- **WithIdFileSystem** - Smart file storage with deterministic IDs and human-readable aliases
+- **CachedFileSystem** - Lightning-fast file operations with intelligent LRU caching and TTL expiration
 
 ## Coming soon:
 
-- Typesage
 - Encrypted - Transparent encryption/decryption
 - Github - Store versioned and encrypted files in github for free. Sync automatically.
 - ACL - Security controlled - Control who can access the files
@@ -61,7 +62,6 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - S3 - AWS S3 as filesystem
 - IPFS - IPFS distributed storage
 - WebDav - WebDAV protocol support
-- Cached - LRU cache with TTL
 - Compressed - Transparent compression
 - Batch - Batch operations for performance
 - Replay - Record and replay operations
@@ -148,8 +148,6 @@ const cachedFs = new CachedFileSystem(encryptedFs);
 // Now you have: caching + encryption + observability + real filesystem
 ```
 
-// ...existing code...
-
 ### 4. Do Not Release Zalgo
 
 Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "[unleashing Zalgo](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
@@ -201,11 +199,7 @@ class AsyncConfigService {
 
 ## Available Implementations
 
-**⚠** Not included, see [https://npmjs.com/package/@synet/fs](https://npmjs.com/package/@synet/fs) or [github](https://github.com/synthetism/fs)
-
-### Core Implementations
-
-#### `NodeFileSystem` (Sync/Async)
+`NodeFileSystem` (Sync/Async)
 
 Real filesystem implementation using Node.js `fs` module:
 
@@ -261,7 +255,97 @@ observableFs.getEventEmitter().subscribe(FilesystemEventTypes.WRITE, {
 });
 ```
 
-## Usage Examples
+### WithIdFileSystem (Sync/Async)
+
+**Smart file storage with deterministic IDs and human-readable aliases**
+
+Ever struggled with the classic dilemma: use meaningful filenames for humans or stable IDs for databases? `WithIdFileSystem` solves this beautifully by giving every file both - a deterministic ID for your database keys and a readable alias for human reference.
+
+#### The Problem
+
+Traditional approaches force you to choose:
+
+```typescript
+// ❌ Option A: Human readable, but unstable for database keys
+const filename = `${user.name.replace(/\s+/g, '-')}-profile.json`;
+
+// ❌ Option B: Stable ID, but cryptic for humans  
+const filename = `${uuid()}.json`;
+
+// ❌ Manual mapping: Brittle and error-prone
+const fileRegistry = new Map<string, string>(); // ID -> filename
+```
+
+#### The Solution
+
+```typescript
+// ✅ Best of both worlds
+import { WithIdFileSystem, FileFormat } from '@synet/fs';
+
+const withIdFs = new WithIdFileSystem(new NodeFileSystem());
+
+// Save with meaningful path
+withIdFs.writeFileSync('./vault/profiles/user1.json', profileData);
+
+// Get stable ID for database
+const id = withIdFs.getId('./vault/profiles/user1.json'); 
+// Returns: "a1b2c3d4e5f6g7h8"
+
+// Get readable alias for humans
+const alias = withIdFs.getAlias('./vault/profiles/user1.json'); 
+// Returns: "vault-profiles-user1"
+
+// Access file three ways:
+const content1 = withIdFs.readFileSync('./vault/profiles/user1.json'); // Original path
+const content2 = withIdFs.getByIdOrAlias('a1b2c3d4e5f6g7h8');           // By ID
+const content3 = withIdFs.getByIdOrAlias('vault-profiles-user1');       // By alias
+```
+
+#### Key Features
+
+- **Deterministic IDs**: Same path always generates the same ID
+- **Human-readable aliases**: Path-based aliases (e.g., `vault-profiles-user1`)
+- **Triple access**: Read files by original path, ID, or alias
+- **Format validation**: Optional file format checking
+- **Metadata tracking**: Complete file metadata management
+- **Storage format**: Files stored as `basename:alias-id.ext`
+
+#### Usage
+
+```typescript
+const userFs = new WithIdFileSystem(nodeFs);
+
+// User uploads avatar
+userFs.writeFileSync('./users/john-doe/avatar.jpg', imageData);
+
+// Store stable reference in database
+const avatarId = userFs.getId('./users/john-doe/avatar.jpg');
+await db.users.update('john-doe', { avatarId });
+
+// Later, serve avatar by ID (works even if user renames file)
+app.get('/avatar/:userId', async (req, res) => {
+  const user = await db.users.findById(req.params.userId);
+  const avatar = userFs.getByIdOrAlias(user.avatarId, FileFormat.JPG);
+  res.type('image/jpeg').send(avatar);
+});
+```
+
+#### Async Usage
+
+```typescript
+import { WithIdFileSystem } from '@synet/fs/promises';
+
+const asyncWithIdFs = new WithIdFileSystem(new AsyncNodeFileSystem());
+
+// All operations are async
+await asyncWithIdFs.writeFile('./data.json', jsonData);
+const id = asyncWithIdFs.getId('./data.json'); // Still sync - metadata only
+const content = await asyncWithIdFs.getByIdOrAlias(id, FileFormat.JSON);
+```
+
+---
+
+## Basic Examples
 
 ### Async Usage
 
