@@ -225,9 +225,9 @@ Last updated: ${new Date().toISOString()}
       
       if (history.length > 0) {
         console.log('🕐 Recent changes:');
-        history.slice(0, 3).forEach(commit => {
+        for (const commit of history.slice(0, 3)) {
           console.log(`   ${commit.date}: ${commit.message} by ${commit.author}`);
-        });
+        }
       }
     } catch (error) {
       console.log('📜 File history: (simulated - would show real Git history with actual GitHub token)');
