@@ -1,6 +1,6 @@
-// @synet/identity/src/shared/filesystem/index.ts
+// @synet/fs/src/promises/index.ts
 
-// Synchronous implementations
+// Asynchronous implementations
 export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
 export { NodeFileSystem } from './filesystem';
 export { MemFileSystem } from './memory';
@@ -9,4 +9,11 @@ export {
   FilesystemEventTypes, 
   type FilesystemEvent 
 } from './observable';
+export { 
+  JsonFileSystem,
+  type JsonFileSystemOptions,
+  JsonParseError,
+  JsonStringifyError,
+  JsonValidationError
+} from './json';
 

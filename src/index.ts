@@ -6,6 +6,13 @@ export {
   FilesystemEventTypes, 
   type FilesystemEvent 
 } from './observable';
+export { 
+  JsonFileSystem,
+  type JsonFileSystemOptions,
+  JsonParseError,
+  JsonStringifyError,
+  JsonValidationError
+} from './json';
 
 // Asynchronous implementations
 export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
@@ -16,3 +23,10 @@ export {
   FilesystemEventTypes as AsyncFilesystemEventTypes,
   type FilesystemEvent as AsyncFilesystemEvent
 } from './promises/observable';
+export { 
+  JsonFileSystem as AsyncJsonFileSystem,
+  type JsonFileSystemOptions as AsyncJsonFileSystemOptions,
+  JsonParseError as AsyncJsonParseError,
+  JsonStringifyError as AsyncJsonStringifyError,
+  JsonValidationError as AsyncJsonValidationError
+} from './promises/json';

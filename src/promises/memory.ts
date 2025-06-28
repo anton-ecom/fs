@@ -31,7 +31,7 @@ export class MemFileSystem implements IAsyncFileSystem {
     try {
       // Ensure the directory exists before writing
       const dirPath = path.substring(0, path.lastIndexOf("/"));
-      if (dirPath && !this.exists(dirPath)) {
+      if (dirPath && !(await this.exists(dirPath))) {
         await this.ensureDir(dirPath);
       }
 

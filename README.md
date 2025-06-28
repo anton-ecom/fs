@@ -1,28 +1,28 @@
 # @synet/patterns
 
 ```bash
-  /$$$$$$                                  /$$    
- /$$__  $$                                | $$    
+  /$$$$$$                                  /$$  
+ /$$__  $$                                | $$  
 | $$  \__/ /$$   /$$ /$$$$$$$   /$$$$$$  /$$$$$$  
 |  $$$$$$ | $$  | $$| $$__  $$ /$$__  $$|_  $$_/  
- \____  $$| $$  | $$| $$  \ $$| $$$$$$$$  | $$    
+ \____  $$| $$  | $$| $$  \ $$| $$$$$$$$  | $$  
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$                              
-          |  $$$$$$/                              
-           \______/                               
-       /$$$$$$$$ /$$$$$$                          
-      | $$_____//$$__  $$                         
-      | $$     | $$  \__/                         
-      | $$$$$  |  $$$$$$                          
-      | $$__/   \____  $$                         
-      | $$      /$$  \ $$                         
-      | $$     |  $$$$$$/                         
-      |__/      \______/                          
-                                                  
-                                                  
-                                                                   
+           /$$  | $$                            
+          |  $$$$$$/                            
+           \______/                             
+       /$$$$$$$$ /$$$$$$                        
+      | $$_____//$$__  $$                       
+      | $$     | $$  \__/                       
+      | $$$$$  |  $$$$$$                        
+      | $$__/   \____  $$                       
+      | $$      /$$  \ $$                       
+      | $$     |  $$$$$$/                       
+      |__/      \______/                        
+                                                
+                                                
+                                                                 
 version: v.1.0.0   
 description: Files are artefacts of identity
 ```
@@ -45,12 +45,15 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 
 ## In package
 
-- Node - fs + fs/promises
-- Memory - memfs
-- Observable - observe any IFileSystem events with EventEmitter/Observer pattern.
+- **NodeFilesystem** - Standard Wrapper of node:fs and node:fs/promises
+- **Memory** - memfs - In-memory filesystem for testing  
+- **Observable** - observe any IFileSystem events with EventEmitter/Observer pattern
+- **JsonFileSystem** - Type-safe JSON file operations with automatic parsing/stringification
 
 ## Coming soon:
 
+- Typesage
+- Analytics
 - Encrypted - Transparent encryption/decryption
 - Github - Store versioned and encrypted files in github for free. Sync automatically.
 - ACL - Security controlled - Control who can access the files
@@ -65,7 +68,7 @@ In some cases, mysql store relatively small amount of business-unrelated informa
 - Schema Validation - Typesafe
 - Mocked - Advanced mocking with scenarios
 - Metrics - Detailed performance metrics
-- Audits - Keep logging of every write/read events. 
+- Audits - Keep logging of every write/read events.
 - Analytics - keep detailed analytics of access and actions (remotely with realtime event/broker)
 - Versioned - simplified git
 - Synced - keep localfiles, but sync them to S3.
@@ -554,7 +557,7 @@ const vaultFs = new AclFileSystem(
 
 ## Conclusion
 
-I've implemented over a hundred of versions of filesystems over last few decades, that I will share with you here. The opportunities here are limitless. From storing encrypted files in sync in hundreds of locations and DHT, to beautiful Verifiable Credentials access control. 
+I've implemented over a hundred of versions of filesystems over last few decades, that I will share with you here. The opportunities here are limitless. From storing encrypted files in sync in hundreds of locations and DHT, to beautiful Verifiable Credentials access control.
 
 Filesystems are far more flexible architectural solution than storing data in Mysql with far greater security and future extention options. When coupled with [Remote Event](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) you can observe, process and act on all filesystem requests - something can't be done with Mysql.
 
@@ -562,24 +565,24 @@ Filesystems are far more flexible architectural solution than storing data in My
 
  **Some features**:
 
- - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why.
- - Mark classified files, protect access through 2FA/VC/NKeys. 
- - Limit scope of  access with VCs and identity who wrote the file. 
- - Keep history of access as part of the file. 
- - Integiry checks, violation flags, time-limit, auto-destruct, penetration alerts, readonly, writeonly, indestructable with auto-restoring. 
- - Selective disclosure protocols (text only), classification markings, traps (altered byte-sequencing/embedded ids for each read).
- - ZKF/ZKF - Zero Knowledge Files - proof you ownership without revealing its contents.
- - Passes - multi-user access with passwords. One-time, time-bound passwords.
- - KYC - Store structured history of access with schemas. 
- - Multi-sig
- - Auto-backup
- - Multi-ACL - part is public, part is private, encrypted.
- - Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
- - Remote control - VM as file.
- - Licensing
+- Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why.
+- Mark classified files, protect access through 2FA/VC/NKeys.
+- Limit scope of  access with VCs and identity who wrote the file.
+- Keep history of access as part of the file.
+- Integiry checks, violation flags, time-limit, auto-destruct, penetration alerts, readonly, writeonly, indestructable with auto-restoring.
+- Selective disclosure protocols (text only), classification markings, traps (altered byte-sequencing/embedded ids for each read).
+- ZKF/ZKF - Zero Knowledge Files - proof you ownership without revealing its contents.
+- Passes - multi-user access with passwords. One-time, time-bound passwords.
+- KYC - Store structured history of access with schemas.
+- Multi-sig
+- Auto-backup
+- Multi-ACL - part is public, part is private, encrypted.
+- Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
+- Remote control - VM as file.
+- Licensing
 
-> Data is new gold. 
+> Data is new gold.
 
-Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)  
+Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)
 
 Stay tuned new versions or ask anything from [REQUESTS][[https://github](https://github.com/synthetism/fs/blob/main/REQUESTS.md)]
