@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import type { IFileSystem } from '@synet/patterns/filesystem';
+import type { IFileSystem, FileStats } from '@synet/patterns/filesystem';
 
 /**
  * GitHub filesystem configuration options
@@ -316,7 +316,7 @@ export class GitHubFileSystem implements IFileSystem {
         return [];
       }
 
-      return response.data
+      return (response.data as Array<{ type: string; name: string }>)
         .filter(item => item.type === 'file')
         .map(item => item.name);
 
@@ -336,6 +336,63 @@ export class GitHubFileSystem implements IFileSystem {
   chmodSync(path: string, mode: number): void {
     // GitHub doesn't support file permissions
     // This is a no-op for compatibility
+  }
+
+  /**
+   * Get file statistics
+   * @param path File path
+   */
+  statSync(path: string): FileStats {
+    try {
+      const normalizedPath = this.normalizePath(path);
+      
+      // Check cache first
+      const cached = this.cache.get(path);
+      if (cached) {
+        return this.createFileStats(cached.content, new Date(), false);
+      }
+
+      // Fetch from GitHub
+      const response = this.makeSync(() =>
+        this.octokit.rest.repos.getContent({
+          owner: this.options.owner,
+          repo: this.options.repo,
+          path: normalizedPath,
+          ref: this.options.branch
+        })
+      );
+
+      if (!response) {
+        throw new Error(`File not found: ${path}`);
+      }
+
+      const isDirectory = Array.isArray(response.data);
+      
+      if (isDirectory) {
+        return this.createFileStats('', new Date(), true);
+      }
+
+      if ('content' in response.data && typeof response.data.content === 'string') {
+        const content = Buffer.from(response.data.content, 'base64').toString('utf8');
+        
+        // Cache the file
+        this.cache.set(path, {
+          content,
+          sha: response.data.sha,
+          path: normalizedPath
+        });
+
+        // Get commit info for more accurate timestamps (simplified)
+        return this.createFileStats(content, new Date(), false);
+      }
+
+      throw new Error(`Unable to get stats for ${path}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+        throw new Error(`File not found: ${path}`);
+      }
+      throw new Error(`Failed to get file stats for ${path}: ${error}`);
+    }
   }
 
   /**
@@ -406,6 +463,27 @@ export class GitHubFileSystem implements IFileSystem {
     }
 
     return result;
+  }
+
+  /**
+   * Create file statistics object
+   * @param content File content
+   * @param lastModified Last modified date
+   * @param isDirectory Is the file a directory
+   */
+  private createFileStats(content: string, lastModified: Date, isDirectory: boolean): FileStats {
+    const size = Buffer.byteLength(content, 'utf8');
+    
+    return {
+      isFile: () => !isDirectory,
+      isDirectory: () => isDirectory,
+      isSymbolicLink: () => false, // GitHub doesn't have symlinks in this context
+      size: isDirectory ? 0 : size,
+      mtime: lastModified,
+      ctime: lastModified, // Creation time same as modification for simplicity
+      atime: lastModified, // Access time same as modification for simplicity
+      mode: 0o644 // Default file permissions
+    };
   }
 }
 

@@ -46,4 +46,14 @@ describe('GitHubFileSystem (Sync)', () => {
 
     expect(gitHubFs).toBeInstanceOf(GitHubFileSystem);
   });
+
+  it('should include statSync method', () => {
+    const gitHubFs = new GitHubFileSystem({
+      token: 'test-token',
+      owner: 'test-owner',
+      repo: 'test-repo'
+    });
+
+    expect(typeof gitHubFs.statSync).toBe('function');
+  });
 });

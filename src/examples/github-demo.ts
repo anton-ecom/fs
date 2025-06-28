@@ -198,10 +198,52 @@ Last updated: ${new Date().toISOString()}
     // Check if optional files exist
     const hasSecrets = await asyncFs.exists('config/secrets.json');
     console.log(`🔐 Secrets file exists: ${hasSecrets}`);
-    
-    console.log('✅ Data retrieval and validation complete\n');
+    console.log('✅ Data validation complete\n');
 
-    console.log('5️⃣ Version control and history...');
+    console.log('5️⃣ File statistics and metadata...');
+    
+    try {
+      // Get detailed file statistics
+      const configStats = await asyncFs.stat('config/production.json');
+      console.log('📊 File statistics for production.json:');
+      console.log(`   Size: ${configStats.size} bytes`);
+      console.log(`   Type: ${configStats.isFile() ? 'File' : 'Directory'}`);
+      console.log(`   Last modified: ${configStats.mtime.toISOString()}`);
+      console.log(`   Permissions: ${configStats.mode.toString(8)}`);
+      
+      // Compare file sizes
+      const docsStats = await asyncFs.stat('docs/api.md');
+      console.log(`📄 API documentation: ${docsStats.size} bytes`);
+      
+      const releaseStats = await asyncFs.stat('docs/release-notes.md');
+      console.log(`📝 Release notes: ${releaseStats.size} bytes`);
+      
+      // Check directory statistics
+      try {
+        const configDirStats = await asyncFs.stat('config');
+        console.log(`📁 Config directory: ${configDirStats.isDirectory() ? 'Directory' : 'File'}`);
+      } catch (error) {
+        console.log('📁 Config directory: (statistics simulated)');
+      }
+      
+      // Demonstrate sync version as well
+      try {
+        const syncConfigStats = syncFs.statSync('config/production.json');
+        console.log(`🔄 Sync version - File size: ${syncConfigStats.size} bytes`);
+      } catch (error) {
+        console.log('🔄 Sync version - Statistics: (simulated due to test environment)');
+      }
+      
+    } catch (error) {
+      console.log('📊 File statistics: (simulated)');
+      console.log('   config/production.json: 486 bytes, last modified: 2024-01-15T10:30:00Z');
+      console.log('   docs/api.md: 1,024 bytes, last modified: 2024-01-15T11:15:00Z');
+      console.log('   docs/release-notes.md: 756 bytes, last modified: 2024-01-15T09:45:00Z');
+    }
+    
+    console.log('✅ File statistics demonstration complete\n');
+
+    console.log('6️⃣ Version control and history...');
     
     // Update feature flags
     const updatedFlags = {
@@ -237,7 +279,7 @@ Last updated: ${new Date().toISOString()}
 
     console.log('✅ Version control demonstration complete\n');
 
-    console.log('6️⃣ Repository statistics and management...');
+    console.log('7️⃣ Repository statistics and management...');
     
     try {
       // Get repository statistics (would work with real GitHub API)
@@ -261,7 +303,7 @@ Last updated: ${new Date().toISOString()}
     asyncFs.clearCache();
     console.log('   ✅ Cache cleared');
 
-    console.log('\n7️⃣ Use case scenarios...');
+    console.log('\n8️⃣ Use case scenarios...');
 
     // Scenario 1: Dynamic configuration loading
     console.log('\n🎯 Scenario 1: Dynamic Configuration Loading');
@@ -329,7 +371,7 @@ Last updated: ${new Date().toISOString()}
     console.log('   ✅ User preferences stored with version history');
     console.log('   🔄 Changes automatically backed up to Git repository');
 
-    console.log('\n8️⃣ Best practices demonstration...');
+    console.log('\n9️⃣ Best practices demonstration...');
     
     // Error handling
     console.log('\n⚠️ Error Handling:');
@@ -383,7 +425,5 @@ function getDefaultConfig() {
   };
 }
 
-// Run the demo if this file is executed directly
-if (require.main === module) {
-  demonstrateGitHubFileSystem().catch(console.error);
-}
+// Run the demo directly
+demonstrateGitHubFileSystem().catch(console.error);

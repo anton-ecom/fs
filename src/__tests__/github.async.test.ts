@@ -456,4 +456,56 @@ describe('GitHubFileSystem (Async)', () => {
       expect(mockFiles.has(testPath)).toBe(false);
     });
   });
+
+  describe('file statistics', () => {
+    it('should get file stats', async () => {
+      const content = 'file stats test content';
+      const path = 'stats-test.txt';
+      
+      await gitHubFs.writeFile(path, content);
+      const stats = await gitHubFs.stat(path);
+      
+      expect(stats).toBeDefined();
+      expect(stats.isFile()).toBe(true);
+      expect(stats.isDirectory()).toBe(false);
+      expect(stats.isSymbolicLink()).toBe(false);
+      expect(stats.size).toBe(Buffer.byteLength(content, 'utf8'));
+      expect(stats.mtime).toBeInstanceOf(Date);
+      expect(stats.ctime).toBeInstanceOf(Date);
+      expect(stats.atime).toBeInstanceOf(Date);
+      expect(typeof stats.mode).toBe('number');
+    });
+
+    it('should handle file stats with nested paths', async () => {
+      // Write files with nested paths
+      await gitHubFs.writeFile('testdir/file1.txt', 'content1');
+      
+      // Test getting stats for the nested file
+      const fileStats = await gitHubFs.stat('testdir/file1.txt');
+      
+      expect(fileStats).toBeDefined();
+      expect(fileStats.isFile()).toBe(true);
+      expect(fileStats.isDirectory()).toBe(false);
+      expect(fileStats.size).toBe(Buffer.byteLength('content1', 'utf8'));
+      expect(fileStats.mtime).toBeInstanceOf(Date);
+    });
+
+    it('should throw error for non-existent file stats', async () => {
+      await expect(gitHubFs.stat('non-existent-stats.txt'))
+        .rejects.toThrow('File not found: non-existent-stats.txt');
+    });
+
+    it('should return cached file stats on second call', async () => {
+      const content = 'cached stats test';
+      const path = 'cached-stats.txt';
+      
+      await gitHubFs.writeFile(path, content);
+      
+      const stats1 = await gitHubFs.stat(path);
+      const stats2 = await gitHubFs.stat(path);
+      
+      expect(stats1.size).toBe(stats2.size);
+      expect(stats1.mtime.getTime()).toBe(stats2.mtime.getTime());
+    });
+  });
 });

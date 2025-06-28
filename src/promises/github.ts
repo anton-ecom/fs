@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import type { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
+import type { IAsyncFileSystem, FileStats } from '@synet/patterns/filesystem/promises';
 
 /**
  * GitHub filesystem configuration options
@@ -322,6 +322,73 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   }
 
   /**
+   * Get file statistics
+   * @param path File path
+   */
+  async stat(path: string): Promise<FileStats> {
+    try {
+      const normalizedPath = this.normalizePath(path);
+      
+      // Check cache first
+      const cached = this.cache.get(path);
+      if (cached) {
+        return this.createFileStats(cached.content, new Date(), false);
+      }
+
+      // Fetch from GitHub
+      const response = await this.octokit.rest.repos.getContent({
+        owner: this.options.owner,
+        repo: this.options.repo,
+        path: normalizedPath,
+        ref: this.options.branch
+      });
+
+      const isDirectory = Array.isArray(response.data);
+      
+      if (isDirectory) {
+        return this.createFileStats('', new Date(), true);
+      }
+
+      if ('content' in response.data && typeof response.data.content === 'string') {
+        const content = Buffer.from(response.data.content, 'base64').toString('utf8');
+        
+        // Cache the file
+        this.cache.set(path, {
+          content,
+          sha: response.data.sha,
+          path: normalizedPath
+        });
+
+        // Try to get more accurate timestamp from commits
+        try {
+          const commits = await this.octokit.rest.repos.listCommits({
+            owner: this.options.owner,
+            repo: this.options.repo,
+            path: normalizedPath,
+            per_page: 1
+          });
+
+          const lastModified = commits.data.length > 0 
+            ? new Date(commits.data[0].commit.committer?.date || new Date())
+            : new Date();
+
+          return this.createFileStats(content, lastModified, false);
+        } catch {
+          // Fallback to current date if commit history fails
+          return this.createFileStats(content, new Date(), false);
+        }
+      }
+
+      throw new Error(`Unable to get stats for ${path}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+        throw new Error(`File not found: ${path}`);
+      }
+      throw new Error(`Failed to get file stats for ${path}: ${error}`);
+    }
+  }
+
+  /**
    * Clear the cache
    */
   clearCache(): void {
@@ -418,6 +485,27 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   private normalizePath(path: string): string {
     // Remove leading slashes and normalize
     return path.replace(/^\.?\/+/, '').replace(/\/+/g, '/');
+  }
+
+  /**
+   * Create file statistics object
+   * @param content File content
+   * @param lastModified Last modified date
+   * @param isDirectory Is the file a directory
+   */
+  private createFileStats(content: string, lastModified: Date, isDirectory: boolean): FileStats {
+    const size = Buffer.byteLength(content, 'utf8');
+    
+    return {
+      isFile: () => !isDirectory,
+      isDirectory: () => isDirectory,
+      isSymbolicLink: () => false, // GitHub doesn't have symlinks in this context
+      size: isDirectory ? 0 : size,
+      mtime: lastModified,
+      ctime: lastModified, // Creation time same as modification for simplicity
+      atime: lastModified, // Access time same as modification for simplicity
+      mode: 0o644 // Default file permissions
+    };
   }
 }
 
