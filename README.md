@@ -9,20 +9,20 @@
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$                    
-          |  $$$$$$/                    
-           \______/                     
-       /$$$$$$$$ /$$$$$$                
-      | $$_____//$$__  $$               
-      | $$     | $$  \__/               
-      | $$$$$  |  $$$$$$                
-      | $$__/   \____  $$               
-      | $$      /$$  \ $$               
-      | $$     |  $$$$$$/               
-      |__/      \______/                
-                                        
-                                        
-                                                         
+           /$$  | $$                
+          |  $$$$$$/                
+           \______/                 
+       /$$$$$$$$ /$$$$$$            
+      | $$_____//$$__  $$           
+      | $$     | $$  \__/           
+      | $$$$$  |  $$$$$$            
+      | $$__/   \____  $$           
+      | $$      /$$  \ $$           
+      | $$     |  $$$$$$/           
+      |__/      \______/            
+                                    
+                                    
+                                                     
 version: v.1.0.0   
 description: Files are artefacts of identity
 ```
@@ -602,7 +602,6 @@ const configService = new ConfigService(new NodeFileSystem());
 const configService = new ConfigService(new MemFileSystem());
 ```
 
-
 ### Testing with In-Memory Filesystem
 
 ```typescript
@@ -684,7 +683,7 @@ Filesystems are far more flexible architectural solution than storing data in My
 
  As mentioned before, I've developed highly secure filesystems (**HSFS**) for enterprises and security firms.
 
- **Some features**:
+ **HSFS**:
 
 - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why.
 - Mark classified files, protect access through 2FA/VC/NKeys.
@@ -699,11 +698,10 @@ Filesystems are far more flexible architectural solution than storing data in My
 - Auto-backup
 - Multi-ACL - part is public, part is private, encrypted.
 - Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
-- Remote control - VM as file.
 - Licensing
 
 > Data is new gold.
 
 Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)
 
-Stay tuned new versions or ask anything from [REQUESTS][[https://github](https://github.com/synthetism/fs/blob/main/REQUESTS.md)]
+Stay tuned new versions or ask anything from [REQUESTS](https://github.com/synthetism/fs/blob/main/REQUESTS.md)
