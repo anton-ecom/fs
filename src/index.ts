@@ -1,5 +1,5 @@
 // Synchronous implementations
-export { NodeFileSystem } from './filesystem';
+export { NodeFileSystem } from './node';
 export { MemFileSystem } from './memory';
 export { 
   ObservableFileSystem, 
@@ -39,7 +39,7 @@ export {
 
 // Asynchronous implementations
 export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
-export { NodeFileSystem as AsyncNodeFileSystem } from './promises/filesystem';
+export { NodeFileSystem as AsyncNodeFileSystem } from './promises/node';
 export { MemFileSystem as AsyncMemFileSystem } from './promises/memory';
 export { 
   ObservableFileSystem as AsyncObservableFileSystem,
