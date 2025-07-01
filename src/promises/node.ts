@@ -27,7 +27,7 @@ export class NodeFileSystem implements IAsyncFileSystem {
 
   async deleteDir(path: string): Promise<void> {
     try {
-      await fs.rmdir(path, { recursive: true });
+      await fs.rm(path, { recursive: true });
     } catch (error: unknown) {
       if (
         error instanceof Error &&
@@ -40,7 +40,6 @@ export class NodeFileSystem implements IAsyncFileSystem {
   }
 
   
-
   async ensureDir(dirPath: string): Promise<void> {
     try {
       await fs.mkdir(dirPath, { recursive: true });

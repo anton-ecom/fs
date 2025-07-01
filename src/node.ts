@@ -39,7 +39,7 @@ export class NodeFileSystem implements IFileSystem {
 
   deleteDirSync(path: string): void {
     if (fs.existsSync(path)) {
-      fs.rmdirSync(path, { recursive: true });
+      fs.rmSync(path, { recursive: true });
     }
   }
   
