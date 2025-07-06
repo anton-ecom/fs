@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import type { IFileSystem, FileStats } from '@synet/patterns/filesystem';
-
+import type { IFileSystem, FileStats } from "./filesystem.interface";
 /**
  * GitHub filesystem configuration options
  */

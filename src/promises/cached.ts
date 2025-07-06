@@ -1,4 +1,4 @@
-import type { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+import type { IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * Cache configuration options

@@ -1,7 +1,6 @@
 
 import fs from "node:fs";
-import type { IFileSystem, FileStats } from "@synet/patterns/filesystem";
-
+import type { IFileSystem, FileStats } from "./filesystem.interface";
 /**
  * Node.js implementation of FileSystem interface
  */

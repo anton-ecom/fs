@@ -1,5 +1,4 @@
-import type { IFileSystem } from "@synet/patterns/filesystem";
-
+import type { IFileSystem } from "./filesystem.interface";
 /**
  * Cache configuration options
  */

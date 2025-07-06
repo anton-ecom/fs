@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
-import type { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
 
 /**
  * Supported file formats for ID-based file operations

@@ -1,5 +1,5 @@
 import { EventEmitter, type Event } from '@synet/patterns';
-import type { IFileSystem } from "@synet/patterns/filesystem";
+import type { IFileSystem } from "./filesystem.interface";
 
 /**
  * File operation types for analytics tracking

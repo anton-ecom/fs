@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import type { IAsyncFileSystem, FileStats } from '@synet/patterns/filesystem/promises';
-
+import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
 /**
  * GitHub filesystem configuration options
  */

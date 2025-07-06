@@ -1,6 +1,5 @@
 import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import type { IFileSystem, FileStats } from '@synet/patterns/filesystem';
-
+import type { IFileSystem, FileStats } from "./filesystem.interface";
 /**
  * S3 filesystem configuration options
  */

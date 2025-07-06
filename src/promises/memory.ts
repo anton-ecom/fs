@@ -1,5 +1,5 @@
 import { fs as memfs } from "memfs";
-import type { IAsyncFileSystem, FileStats } from "@synet/patterns/filesystem/promises";
+import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
 
 /**
  * In-memory file system implementation using memfs

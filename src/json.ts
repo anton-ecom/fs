@@ -1,5 +1,4 @@
-import type { IFileSystem } from "@synet/patterns/filesystem";
-
+import type { IFileSystem, FileStats } from "./filesystem.interface";
 /**
  * Type-safe JSON filesystem that automatically handles JSON parsing/stringification
  * Wraps any IFileSystem implementation to provide typed JSON operations

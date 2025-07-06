@@ -38,7 +38,8 @@ export {
 } from './github';
 
 // Asynchronous implementations
-export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
+export { IAsyncFileSystem } from './promises/filesystem.interface';
+export { IFileSystem } from './filesystem.interface';
 export { NodeFileSystem as AsyncNodeFileSystem } from './promises/node';
 export { MemFileSystem as AsyncMemFileSystem } from './promises/memory';
 export { 

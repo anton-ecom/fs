@@ -1,6 +1,5 @@
 import { EventEmitter, type Event } from '@synet/patterns';
-import type { IFileSystem, FileStats } from "@synet/patterns/filesystem";
-
+import type { IFileSystem, FileStats } from "./filesystem.interface";
 export enum FilesystemEventTypes {
   EXISTS = 'file.exists',
   READ = 'file.read',

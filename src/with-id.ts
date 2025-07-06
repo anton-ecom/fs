@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
-import type { IFileSystem } from "@synet/patterns/filesystem";
-
+import type { IFileSystem } from "./filesystem.interface";
 /**
  * Supported file formats for ID-based file operations
  */
