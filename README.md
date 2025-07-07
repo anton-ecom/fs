@@ -9,21 +9,21 @@
  /$$  \ $$| $$  | $$| $$  | $$| $$_____/  | $$ /$$
 |  $$$$$$/|  $$$$$$$| $$  | $$|  $$$$$$$  |  $$$$/
  \______/  \____  $$|__/  |__/ \_______/   \___/  
-           /$$  | $$              
-          |  $$$$$$/              
-           \______/               
-       /$$$$$$$$ /$$$$$$          
-      | $$_____//$$__  $$         
-      | $$     | $$  \__/         
-      | $$$$$  |  $$$$$$          
-      | $$__/   \____  $$         
-      | $$      /$$  \ $$         
-      | $$     |  $$$$$$/         
-      |__/      \______/          
-                                  
-                                  
-                                                   
-version: v.1.0.1   
+           /$$  | $$  
+          |  $$$$$$/  
+           \______/   
+       /$$$$$$$$ /$$$$$$  
+      | $$_____//$$__  $$   
+      | $$     | $$  \__/   
+      | $$$$$  |  $$$$$$  
+      | $$__/   \____  $$   
+      | $$      /$$  \ $$   
+      | $$     |  $$$$$$/   
+      |__/      \______/  
+                    
+                    
+                                     
+version: v.1.0.2   
 description: Files are artefacts of identity
 ```
 
@@ -38,10 +38,6 @@ npm i @synet/fs
 ## Overview
 
 This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released).
-
-**Why so much attention to FS, when there's mysql ?**
-
-In some cases, mysql store relatively small amount of business-unrelated information, logs, events, docs,  but you drag it all along all your services,
 
 ## In package
 
@@ -107,13 +103,41 @@ With the abstraction:
 
 ```typescript
 // ✅ Easy to test - uses dependency injection
-import { IFileSystem } from './filesystem.interface';
+import { IFileSystem } from '@synet/fs';
 
 export class UserService {
   constructor(private fs: IFileSystem) {}
   
   saveUser(user: User) {
+
+    // ❌ Cant use that 
+    this.fs.writeFile('/data/users.json', JSON.stringify(user));
+ 
+    // ✅  Only sync methods available
     this.fs.writeFileSync('/data/users.json', JSON.stringify(user));
+      
+  }
+}
+```
+
+Async and Sync can't be mixed in one component = predictable behaviour, no Zalgo surprises.
+
+```typescript
+
+// ✅ Easy to test - uses dependency injection with predictable async. 
+import { IAsyncFileSystem } from '@synet/fs/promises';
+
+export class UserService {
+  constructor(private fs: IAsyncFileSystem) {}
+  
+  saveUser(user: User) {
+     
+     // ❌ Cant use that 
+     this.fs.writeFileSync('/data/users.json', JSON.stringify(user));
+
+    // ✅  Only Async methods available
+     this.fs.writeFile('/data/users.json', JSON.stringify(user));
+
   }
 }
 ```
@@ -194,23 +218,19 @@ class AsyncConfigService {
 }
 ```
 
-**Keep Zalgo locked away** - your components are predictable, your consumers know exactly what to expect!
+**Keep Zalgo locked away** - your components are predictable, your consumers know exactly what to expect, types enforce right behaviour on compile time.
 
 ## Available Implementations
 
 `NodeFileSystem` (Sync/Async)
 
-Real filesystem implementation using Node.js `fs` module:
-
-```typescript
-// Synchronous
-import { NodeFileSystem } from './filesystem';
+Real filesystem implementation using Node.js `fs` module:// Synchronous
+import { NodeFileSystem, IFileSystem } from '@synet/fs';
 const syncFs = new NodeFileSystem();
 
-// Asynchronous  
-import { AsyncNodeFileSystem } from './promises/filesystem';
-const asyncFs = new AsyncNodeFileSystem();
-```
+// Asynchronous
+import { NodeFileSystem, IAsyncFileSystem } from '@synet/fs/promises';
+const asyncFs = new NodeFileSystem();
 
 #### `MemFileSystem` (Sync/Async)
 
@@ -218,12 +238,12 @@ In-memory filesystem for testing:
 
 ```typescript
 // Synchronous
-import { MemFileSystem } from './memory';
+import { MemFileSystem } from '@synet/fs';
 const memFs = new MemFileSystem();
 
 // Asynchronous
-import { AsyncMemFileSystem } from './promises/memory';
-const asyncMemFs = new AsyncMemFileSystem();
+import { MemFileSystem } from '@synet/fs/promises/memory';
+const asyncMemFs = new MemFileSystem();
 ```
 
 ### Observable Implementations
@@ -232,10 +252,10 @@ The `ObservableFileSystem` wraps any base filesystem and emits events for monito
 
 ```typescript
 // Synchronous Observable
-import { ObservableFileSystem, FilesystemEventTypes } from './observable.interface';
+import { ObservableFileSystem, FilesystemEventTypes } from '@synet/fs';
 
 // Asynchronous Observable
-import { AsyncObservableFileSystem } from './promises/observable.interface';
+import { ObservableFileSystem } from '@synet/fs';
 
 // Monitor specific operations
 const observableFs = new ObservableFileSystem(
@@ -372,7 +392,7 @@ Just use github.
 
 ```typescript
 // ✅ Automatic version control with meaningful commits
-import { GitHubFileSystem } from '@synet/fs';
+import { GitHubFileSystem } from '@synet/fs/promises';
 
 const ghFs = new GitHubFileSystem({
   owner: 'myorg',
@@ -382,15 +402,15 @@ const ghFs = new GitHubFileSystem({
 });
 
 // Write files with automatic commits
-ghFs.writeFileSync('./config.json', JSON.stringify(newConfig));
+await ghFs.writeFile('./config.json', JSON.stringify(newConfig));
 // Automatically commits: "Update config.json"
 
 // Read files with intelligent caching
-const config = JSON.parse(ghFs.readFileSync('./config.json'));
+const config = JSON.parse(await ghFs.readFile('./config.json'));
 
 // Full directory operations
-ghFs.ensureDirSync('./backups');
-const files = ghFs.readdirSync('./');
+await ghFs.ensureDir('./backups');
+const files = ghFs.readdir('./');
 ```
 
 #### Key Features
@@ -677,11 +697,9 @@ const vaultFs = new AclFileSystem(
 
 ## Conclusion
 
-I've implemented over a hundred of versions of filesystems over last few decades, that I will share with you here. The opportunities here are limitless. From storing encrypted files in sync in hundreds of locations and DHT, to beautiful Verifiable Credentials access control.
-
 Filesystems are far more flexible architectural solution than storing data in Mysql with far greater security and future extention options. When coupled with [Remote Event](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) you can observe, process and act on all filesystem requests - something can't be done with Mysql.
 
- As mentioned before, I've developed highly secure filesystems (**HSFS**) for enterprises and security firms.
+ As mentioned before, I've developed High Security File System (HSFS) for enterprises and security firms:
 
  **HSFS**:
 
