@@ -53,7 +53,7 @@ export interface AsyncFileSystemState {
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations
  */
-export class AsyncFileSystem {
+export class AsyncFileSystem implements IAsyncFileSystem {
   private state: AsyncFileSystemState;
 
   private constructor(state: AsyncFileSystemState) {
@@ -153,6 +153,61 @@ export class AsyncFileSystem {
   async ensureDir(path: string): Promise<void> {
     try {
       await this.state.backend.ensureDir(path);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Delete directory asynchronously
+   */
+  async deleteDir(path: string): Promise<void> {
+    try {
+      await this.state.backend.deleteDir(path);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Set file permissions asynchronously
+   */
+  async chmod(path: string, mode: number): Promise<void> {
+    try {
+      await this.state.backend.chmod(path, mode);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Get file statistics asynchronously
+   */
+  async stat(path: string): Promise<import("./filesystem.interface").FileStats> {
+    try {
+      const result = await this.state.backend.stat?.(path);
+      if (!result) {
+        throw new Error(`stat method not available on ${this.state.config.type} backend`);
+      }
+      return result;
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Clear directory contents asynchronously
+   */
+  async clear(dirPath: string): Promise<void> {
+    try {
+      if (!this.state.backend.clear) {
+        throw new Error(`clear method not available on ${this.state.config.type} backend`);
+      }
+      await this.state.backend.clear(dirPath);
     } catch (error) {
       this.state.operations.errors++;
       throw error;

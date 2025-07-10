@@ -53,7 +53,7 @@ export interface SyncFileSystemState {
 /**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
-export class FileSystem {
+export class FileSystem implements IFileSystem {
   private state: SyncFileSystemState;
 
   private constructor(state: SyncFileSystemState) {
@@ -82,13 +82,13 @@ export class FileSystem {
   }
 
   // ==========================================
-  // NATIVE FILESYSTEM METHODS
+  // NATIVE FILESYSTEM METHODS (with Sync suffix)
   // ==========================================
 
   /**
    * Read file content synchronously
    */
-  readFile(path: string): string {
+  readFileSync(path: string): string {
     try {
       this.state.operations.reads++;
       return this.state.backend.readFileSync(path);
@@ -101,7 +101,7 @@ export class FileSystem {
   /**
    * Write file content synchronously
    */
-  writeFile(path: string, data: string): void {
+  writeFileSync(path: string, data: string): void {
     try {
       this.state.operations.writes++;
       this.state.backend.writeFileSync(path, data);
@@ -114,7 +114,7 @@ export class FileSystem {
   /**
    * Check if file/directory exists synchronously
    */
-  exists(path: string): boolean {
+  existsSync(path: string): boolean {
     try {
       return this.state.backend.existsSync(path);
     } catch (error) {
@@ -126,7 +126,7 @@ export class FileSystem {
   /**
    * Delete file synchronously
    */
-  deleteFile(path: string): void {
+  deleteFileSync(path: string): void {
     try {
       this.state.backend.deleteFileSync(path);
     } catch (error) {
@@ -138,7 +138,7 @@ export class FileSystem {
   /**
    * Read directory contents synchronously
    */
-  readDir(path: string): string[] {
+  readDirSync(path: string): string[] {
     try {
       return this.state.backend.readDirSync(path);
     } catch (error) {
@@ -150,9 +150,64 @@ export class FileSystem {
   /**
    * Ensure directory exists synchronously
    */
-  ensureDir(path: string): void {
+  ensureDirSync(path: string): void {
     try {
       this.state.backend.ensureDirSync(path);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Delete directory synchronously
+   */
+  deleteDirSync(path: string): void {
+    try {
+      this.state.backend.deleteDirSync(path);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Set file permissions synchronously
+   */
+  chmodSync(path: string, mode: number): void {
+    try {
+      this.state.backend.chmodSync(path, mode);
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Get file statistics synchronously
+   */
+  statSync(path: string): import("./filesystem.interface").FileStats {
+    try {
+      const result = this.state.backend.statSync?.(path);
+      if (!result) {
+        throw new Error(`statSync method not available on ${this.state.config.type} backend`);
+      }
+      return result;
+    } catch (error) {
+      this.state.operations.errors++;
+      throw error;
+    }
+  }
+
+  /**
+   * Clear directory contents synchronously
+   */
+  clear(dirPath: string): void {
+    try {
+      if (!this.state.backend.clear) {
+        throw new Error(`clear method not available on ${this.state.config.type} backend`);
+      }
+      this.state.backend.clear(dirPath);
     } catch (error) {
       this.state.operations.errors++;
       throw error;
@@ -173,13 +228,17 @@ export class FileSystem {
       getBackendType: () => this.state.config.type,
       getConfig: () => ({ ...this.state.config }),
       
-      // Wrapped methods for teaching pattern (optional usage)
-      readFile: (path: string) => this.readFile(path),
-      writeFile: (path: string, data: string) => this.writeFile(path, data),
-      exists: (path: string) => this.exists(path),
-      deleteFile: (path: string) => this.deleteFile(path),
-      readDir: (path: string) => this.readDir(path),
-      ensureDir: (path: string) => this.ensureDir(path),
+      // Filesystem methods with Sync suffix (matches IFileSystem interface)
+      existsSync: (path: string) => this.existsSync(path),
+      readFileSync: (path: string) => this.readFileSync(path),
+      writeFileSync: (path: string, data: string) => this.writeFileSync(path, data),
+      deleteFileSync: (path: string) => this.deleteFileSync(path),
+      deleteDirSync: (path: string) => this.deleteDirSync(path),
+      readDirSync: (path: string) => this.readDirSync(path),
+      ensureDirSync: (path: string) => this.ensureDirSync(path),
+      chmodSync: (path: string, mode: number) => this.chmodSync(path, mode),
+      statSync: (path: string) => this.statSync(path),
+      clear: (dirPath: string) => this.clear(dirPath),
     };
   }
 
@@ -265,7 +324,7 @@ export class FileSystem {
   }
 
   isAsync(): boolean {
-    return true; // This unit is always async
+    return false; // This unit is always sync
   }
 
    
