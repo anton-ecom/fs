@@ -37,6 +37,17 @@ export {
   type GitHubFileSystemOptions
 } from './github';
 
+// Unit Architecture
+export {
+  FilesystemUnit,
+  FilesystemUnits,
+  type FilesystemBackendType,
+  type FilesystemBackendOptions,
+  type FilesystemConfig,
+  type FilesystemUnitState
+} from './filesystem-unit';
+
+
 // Asynchronous implementations
 export { IAsyncFileSystem } from './promises/filesystem.interface';
 export { IFileSystem } from './filesystem.interface';
