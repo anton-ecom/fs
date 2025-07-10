@@ -5,7 +5,7 @@
  * You'll need valid AWS credentials to run the full demo.
  */
 
-import { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit';
+import { FileSystem, FileSystems } from '../src/filesystem-unit';
 import type { S3FileSystemOptions } from '../src/s3';
 
 /**
@@ -28,7 +28,7 @@ export async function demonstrateS3Filesystem() {
   try {
     // 1. Create S3 filesystem unit
     console.log('1. Creating S3 filesystem unit...');
-    const s3Unit = FilesystemUnits.s3(S3_CONFIG, true); // Always use async for S3
+    const s3Unit = FileSystems.s3(S3_CONFIG, true); // Always use async for S3
     const fs = s3Unit.teach();
     
     console.log('   Backend type:', fs.getBackendType());
@@ -293,14 +293,14 @@ export async function demonstrateProductionS3Setup() {
   console.log('Example usage:');
   console.log('');
   console.log('// Primary region storage');
-  console.log('const primaryS3 = FilesystemUnits.s3({');
+  console.log('const primaryS3 = FileSystems.s3({');
   console.log('  region: "us-east-1",');
   console.log('  bucket: "synet-identity-primary",');
   console.log('  prefix: "production/"');
   console.log('});');
   console.log('');
   console.log('// Encrypted storage');
-  console.log('const encryptedS3 = FilesystemUnits.s3({');
+  console.log('const encryptedS3 = FileSystems.s3({');
   console.log('  region: "us-east-1",');
   console.log('  bucket: "synet-identity-encrypted",');
   console.log('  prefix: "secure/"');

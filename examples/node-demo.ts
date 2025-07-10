@@ -2,7 +2,7 @@
  * Node Filesystem Demo - Local file storage with Filesystem Unit
  */
 
-import { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit';
+import { FS } from '../src/fs';
 import { demonstrateIdentityPersistence } from './identity-persistence-demo';
 
 /**
@@ -13,7 +13,7 @@ export async function demonstrateNodeFilesystem() {
 
   // 1. Create Node filesystem unit
   console.log('1. Creating Node filesystem unit...');
-  const nodeUnit = FilesystemUnits.node(true); // Use async version
+  const nodeUnit = FS.async.node(); // Use async version
   const fs = nodeUnit.teach();
   
   console.log('   Backend type:', fs.getBackendType());
@@ -22,7 +22,8 @@ export async function demonstrateNodeFilesystem() {
 
   // 2. Basic operations
   console.log('2. Testing basic operations...');
-  
+
+
   // Ensure test directory exists
   await fs.ensureDir('./demo-data');
   
@@ -142,7 +143,7 @@ export async function demonstrateNodeFilesystem() {
 export async function demonstrateAdvancedNodePatterns() {
   console.log('🚀 Advanced Node Filesystem Patterns\n');
 
-  const nodeUnit = FilesystemUnits.node(true);
+  const nodeUnit = FileSystems.node(true);
   const fs = nodeUnit.teach();
 
   // 1. Hierarchical identity storage

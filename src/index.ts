@@ -1,3 +1,18 @@
+// Main filesystem units and factory
+export { FS, FileSystem, AsyncFileSystem, FileSystems } from './fs';
+
+// Core types
+export type { 
+  SyncFilesystemBackendType, 
+  SyncFilesystemBackendOptions, 
+  SyncFilesystemConfig 
+} from './filesystem-unit';
+export type { 
+  AsyncFilesystemBackendType, 
+  AsyncFilesystemBackendOptions, 
+  AsyncFilesystemConfig 
+} from './promises/async-filesystem-unit';
+
 // Synchronous implementations
 export { NodeFileSystem } from './node';
 export { MemFileSystem } from './memory';
@@ -36,17 +51,6 @@ export {
   GitHubFileSystem,
   type GitHubFileSystemOptions
 } from './github';
-
-// Unit Architecture
-export {
-  FilesystemUnit,
-  FilesystemUnits,
-  type FilesystemBackendType,
-  type FilesystemBackendOptions,
-  type FilesystemConfig,
-  type FilesystemUnitState
-} from './filesystem-unit';
-
 
 // Asynchronous implementations
 export { IAsyncFileSystem } from './promises/filesystem.interface';

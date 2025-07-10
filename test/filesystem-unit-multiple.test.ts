@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit';
+import { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit-multiple';
 
 describe('FilesystemUnit', () => {
   describe('CREATE', () => {

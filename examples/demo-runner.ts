@@ -6,7 +6,7 @@
 
 import { demonstrateNodeFilesystem } from './node-demo';
 import { demonstrateS3Filesystem, compareS3WithOtherBackends } from './s3-demo-unit';
-import { FilesystemUnits } from '../src/filesystem-unit';
+import { FileSystems } from '../src/filesystem-unit';
 
 async function demonstrateAllBackends() {
   console.log('🚀 Filesystem Unit - Complete Backend Demonstration\n');
@@ -16,8 +16,8 @@ async function demonstrateAllBackends() {
   // 1. Memory backend demo
   console.log('1️⃣  MEMORY BACKEND DEMO');
   console.log('='.repeat(30));
-  
-  const memoryUnit = FilesystemUnits.memory();
+
+  const memoryUnit = FileSystems.memory();
   const memFs = memoryUnit.teach();
   
   console.log('Backend:', memFs.getBackendType());
@@ -39,7 +39,7 @@ async function demonstrateAllBackends() {
   console.log('3️⃣  RUNTIME BACKEND SWITCHING');
   console.log('='.repeat(30));
   
-  const switchableUnit = FilesystemUnits.memory();
+  const switchableUnit = FileSystems.memory();
   console.log('Initial backend:', switchableUnit.teach().getBackendType());
   
   // Switch to Node
@@ -85,7 +85,7 @@ export async function quickDemo() {
   console.log('⚡ Quick Filesystem Unit Demo\n');
   
   // Create memory filesystem
-  const fs = FilesystemUnits.development().teach();
+  const fs = FileSystems.development().teach();
   
   // Simulate identity storage
   const identity = {
