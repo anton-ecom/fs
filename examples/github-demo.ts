@@ -1,5 +1,5 @@
-import { GitHubFileSystem } from '../github';
-import { GitHubFileSystem as AsyncGitHubFileSystem } from '../promises/github';
+import { GitHubFileSystem } from '../src/github';
+import { GitHubFileSystem as AsyncGitHubFileSystem } from '../src/promises/github';
 
 /**
  * Demonstration of GitHubFileSystem capabilities

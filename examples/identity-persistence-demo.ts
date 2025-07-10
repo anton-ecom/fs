@@ -5,7 +5,7 @@
  * to handle identity creation, saving, and restoration.
  */
 
-import { FilesystemUnit, FilesystemUnits } from '../filesystem-unit';
+import type { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit-multiple';
 
 /**
  * Identity data structure (simplified for demo)

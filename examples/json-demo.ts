@@ -1,5 +1,5 @@
-import { JsonFileSystem } from '../json';
-import { MemFileSystem } from '../memory';
+import { JsonFileSystem } from '../src/json';
+import { MemFileSystem } from '../src/memory';
 
 interface AppConfig {
   name: string;

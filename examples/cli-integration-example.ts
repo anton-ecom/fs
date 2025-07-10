@@ -5,7 +5,7 @@
  * and restores them using the Filesystem Unit architecture.
  */
 
-import { FilesystemUnit, FilesystemUnits } from '../filesystem-unit';
+import type { FilesystemUnit, FilesystemUnits } from '../src/filesystem-unit';
 
 // Mock Identity Unit interface (would import from @synet/identity)
 interface MockIdentityUnit {
