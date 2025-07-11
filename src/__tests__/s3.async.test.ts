@@ -20,6 +20,7 @@ describe('S3FileSystem (Async)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSend.mockClear();
+    mockSend.mockReset(); // Reset all mock implementations
     
     s3FileSystem = new S3FileSystem({
       region: 'us-east-1',
@@ -27,6 +28,9 @@ describe('S3FileSystem (Async)', () => {
       accessKeyId: 'test-key',
       secretAccessKey: 'test-secret'
     });
+    
+    // Clear any cached data from previous tests
+    s3FileSystem.clearCache();
   });
 
   describe('interface compliance', () => {

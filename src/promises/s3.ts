@@ -122,12 +122,8 @@ export class S3FileSystem implements IAsyncFileSystem {
         Key: key
       }));
 
-      if (!response.Body) {
-        throw new Error(`No content returned for ${path}`);
-      }
-
-      // Convert stream to string - AWS SDK v3 body can be various types
-      const content = await this.bodyToString(response.Body);
+      // Handle empty files - response.Body might be undefined or empty
+      const content = response.Body ? await this.bodyToString(response.Body) : '';
       
       // Cache the file
       this.cache.set(key, {
@@ -431,11 +427,17 @@ export class S3FileSystem implements IAsyncFileSystem {
    * @param body Response body from AWS SDK
    */
   private async bodyToString(body: unknown): Promise<string> {
+    // Handle null/undefined/empty body
+    if (!body) {
+      return '';
+    }
+
     // AWS SDK v3 body can be a Readable stream, Blob, or other types
     if (body && typeof body === 'object' && 'transformToString' in body && 
         typeof (body as { transformToString: () => Promise<string> }).transformToString === 'function') {
       // For modern AWS SDK v3, use transformToString if available
-      return await (body as { transformToString: () => Promise<string> }).transformToString();
+      const result = await (body as { transformToString: () => Promise<string> }).transformToString();
+      return result || '';
     }
     
     // Handle as Node.js stream
@@ -445,7 +447,10 @@ export class S3FileSystem implements IAsyncFileSystem {
       
       return new Promise((resolve, reject) => {
         stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        stream.on('end', () => {
+          const result = Buffer.concat(chunks).toString('utf8');
+          resolve(result || '');
+        });
         stream.on('error', reject);
       });
     }
@@ -456,7 +461,8 @@ export class S3FileSystem implements IAsyncFileSystem {
     }
     
     if (body instanceof Uint8Array) {
-      return Buffer.from(body).toString('utf8');
+      const result = Buffer.from(body).toString('utf8');
+      return result || '';
     }
     
     throw new Error('Unsupported body type for conversion to string');

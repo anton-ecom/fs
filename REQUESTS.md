@@ -1,10 +1,10 @@
 # Coming soon
 
-I've developed over 20 different implementations of this patterns. I will publish them all with time, but if you're interested in any of these, let me know [anton@synthetism.ai](emailto:anton@synthetism.ai)
+I've developed over 20 different implementations of this patterns. I will publish them all with time, but if you're interested in any of these, let me know [0en@synthetism.ai](emailto:0en@synthetism.ai)
 
 ## **Security & Access Control**
 
-### `IEncryptedFileSystem` (Your planned)
+### `IEncryptedFileSystem` 
 
 ```typescript
 // Transparent encryption/decryption

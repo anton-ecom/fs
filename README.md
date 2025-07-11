@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.2   
+version: v.1.0.4   
 description: Files are artefacts of identity
 ```
 
@@ -176,7 +176,7 @@ const cachedFs = new CachedFileSystem(encryptedFs);
 Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "[unleashing Zalgo](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
 
 ```typescript
-// ❌ BAD: Mixed sync/async in one component - Zalgo unleashed!
+// ❌ BAD: Mixed sync/async in one component
 class BadConfigService {
   loadConfig(): Config | Promise<Config> {
     if (this.shouldUseCache()) {
@@ -195,7 +195,7 @@ const result = configService.loadConfig();
 // Is it Config or Promise<Config>? 🤷‍♂️
 ```
 
-With our abstraction, you choose your paradigm upfront and stick to it:
+With strict interface, you choose your paradigm upfront and stick to it:
 
 ```typescript
 // ✅ GOOD: Consistent sync interface
@@ -219,6 +219,107 @@ class AsyncConfigService {
 ```
 
 **Keep Zalgo locked away** - your components are predictable, your consumers know exactly what to expect, types enforce right behaviour on compile time.
+
+## FS Pattern - The Clean Factory
+
+The **FS Pattern** is a filesystem factory that provides a clean, intuitive way to create filesystem units with clear separation between sync and async operations. 
+
+### The Genius of `FS.async.node()`
+
+```typescript
+import { FS } from '@synet/fs';
+
+// ✨ The beautiful simplicity:
+const syncFs = FS.sync.memory();      // Synchronous in-memory filesystem
+const asyncFs = FS.async.s3(options); // Asynchronous S3 filesystem
+const devFs = FS.presets.development(); // Quick development setup
+```
+
+### FileSystem and AsyncFileSystem Units
+
+The FS pattern is built on two foundational **Units** that follow the Unit Architecture and Unit Driven Design best practices:
+
+#### FileSystem Unit (Sync)
+```typescript
+import { FileSystem } from '@synet/fs';
+
+const syncUnit = FileSystem.create({ type: "memory" });
+const content = syncUnit.readFile('./file.txt'); // Returns string directly
+```
+
+#### AsyncFileSystem Unit (Async)
+```typescript
+import { AsyncFileSystem } from '@synet/fs';
+
+const asyncUnit = AsyncFileSystem.create({ type: "s3", options: s3Config });
+const content = await asyncUnit.readFile('./file.txt'); // Returns Promise<string>
+```
+
+### FS Factory Organization
+
+The **FS pattern** organizes all filesystem operations into logical namespaces:
+
+```typescript
+export const FS = {
+  // Synchronous operations
+  sync: {
+    memory: () => FileSystem.create({ type: "memory" }),
+    node: () => FileSystem.create({ type: "node" }),
+    github: (options) => FileSystem.create({ type: "github", options }),
+    s3: (options) => FileSystem.create({ type: "s3", options }),
+  },
+  
+  // Asynchronous operations  
+  async: {
+    memory: () => AsyncFileSystem.create({ type: "memory" }),
+    node: () => AsyncFileSystem.create({ type: "node" }),
+    github: (options) => AsyncFileSystem.create({ type: "github", options }),
+    s3: (options) => AsyncFileSystem.create({ type: "s3", options }),
+  },
+  
+  // Quick presets for common scenarios
+  presets: {
+    development: () => FS.sync.memory(),
+    developmentAsync: () => FS.async.memory(),
+    local: () => FS.sync.node(),
+    localAsync: () => FS.async.node(),
+    production: (s3Options) => FS.async.s3(s3Options),
+    git: (githubOptions) => FS.async.github(githubOptions),
+  }
+};
+```
+
+### Why This Pattern ?
+
+1. **🎯 Clear Intent**: `FS.async.node()` tells you exactly what you're getting
+2. **🚫 No Zalgo**: Impossible to mix sync/async in one component  
+3. **⚡ Zero Confusion**: The API guides you to the right choice
+4. **🔄 Composable**: Built on Unit Architecture for infinite extension
+5. **🛡️ Type Safety**: TypeScript enforces correct usage patterns
+
+### Usage Examples
+
+```typescript
+// Development: Fast in-memory testing
+const devFs = FS.presets.development();
+devFs.writeFile('test.txt', 'Hello World');
+
+// Production: Scalable cloud storage
+const prodFs = FS.presets.production({
+  region: 'us-east-1',
+  bucket: 'my-app-storage',
+  prefix: 'synet-demo/',  // Optional: acts as root directory
+  accessKeyId: '',   // Or use AWS profile/IAM role
+  secretAccessKey: '',   // Or use AWS profile/IAM role
+});
+await prodFs.writeFile('data.json', JSON.stringify(data));
+
+// Local development with async patterns
+const localAsync = FS.async.node();
+await localAsync.ensureDir('./uploads');
+```
+
+**This is the foundation pattern that enables your zero-dependency, composable architecture.**
 
 ## Available Implementations
 

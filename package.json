@@ -1,6 +1,6 @@
 {
   "name": "@synet/fs",
-  "version": "1.0.3-dev.2",
+  "version": "1.0.4",
   "description": "Robust, battle-tested filesystem abstraction for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -71,6 +71,7 @@
     "@aws-sdk/client-s3": "^3.839.0",
     "@octokit/rest": "^22.0.0",
     "@synet/patterns": "^2.1.6-dev.1",
+    "@synet/unit": "^1.0.4",
     "memfs": "^4.17.2"
   }
 }
