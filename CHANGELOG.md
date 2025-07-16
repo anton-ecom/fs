@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 Most patterns are highly stable, no changes will be made to existing methods, only extended, but I will adhere to adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) just in case. You can safely upgrade, but as always, RTFM (read changelog for major releases).
 
+## [1.0.5] - 2025-07-14
+
+### Changed
+
+- Updated dependencies
+
+## [1.0.4] - 2025-07-12
+
+### Changed
+
+- Added FileSystem, AsyncFileSystem Units
+- FS pattern - factory for building complex filesystem flows
+
+
 ## [1.0.2] - 2025-07-07
 
 ### Changed

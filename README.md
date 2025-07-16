@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.4   
+version: v.1.0.5   
 description: Files are artefacts of identity
 ```
 
@@ -224,7 +224,7 @@ class AsyncConfigService {
 
 The **FS Pattern** is a filesystem factory that provides a clean, intuitive way to create filesystem units with clear separation between sync and async operations. 
 
-### The Genius of `FS.async.node()`
+### `FS.async.node()`
 
 ```typescript
 import { FS } from '@synet/fs';
@@ -291,11 +291,11 @@ export const FS = {
 
 ### Why This Pattern ?
 
-1. **🎯 Clear Intent**: `FS.async.node()` tells you exactly what you're getting
-2. **🚫 No Zalgo**: Impossible to mix sync/async in one component  
-3. **⚡ Zero Confusion**: The API guides you to the right choice
-4. **🔄 Composable**: Built on Unit Architecture for infinite extension
-5. **🛡️ Type Safety**: TypeScript enforces correct usage patterns
+1. ** Clear Intent**: `FS.async.node()` tells you exactly what you're getting
+2. ** No Zalgo**: Impossible to mix sync/async in one component  
+3. ** Zero Confusion**: The API guides you to the right choice
+4. ** Composable**: Built on Unit Architecture for infinite extension
+5. ** Type Safety**: TypeScript enforces correct usage patterns
 
 ### Usage Examples
 
