@@ -6,6 +6,7 @@
  */
 
 import type { IFileSystem } from "./filesystem.interface";
+import { Unit, UnitSchema, createUnitSchema, type TeachingContract, type UnitProps } from '@synet/unit';
 
 import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
@@ -51,13 +52,25 @@ export interface SyncFileSystemState {
 }
 
 /**
+ * Sync Filesystem Unit properties following Unit Architecture
+ */
+interface SyncFileSystemProps extends UnitProps {
+  backend: IFileSystem;
+  config: SyncFilesystemConfig;
+  operations: {
+    reads: number;
+    writes: number;
+    errors: number;
+  };
+}
+
+/**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
-export class FileSystem implements IFileSystem {
-  private state: SyncFileSystemState;
+export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem {
 
-  private constructor(state: SyncFileSystemState) {
-    this.state = state;
+  protected constructor(props: SyncFileSystemProps) {
+    super(props);
   }
 
   /**
@@ -68,7 +81,11 @@ export class FileSystem implements IFileSystem {
   ): FileSystem {
     const backend = FileSystem.createBackend(config);
 
-    const state: SyncFileSystemState = {
+    const props: SyncFileSystemProps = {
+      dna: createUnitSchema({
+        id: 'filesystem',
+        version: '1.0.0'
+      }),
       backend,
       config,
       operations: {
@@ -76,9 +93,10 @@ export class FileSystem implements IFileSystem {
         writes: 0,
         errors: 0,
       },
+      created: new Date()
     };
 
-    return new FileSystem(state);
+    return new FileSystem(props);
   }
 
   // ==========================================
@@ -89,26 +107,14 @@ export class FileSystem implements IFileSystem {
    * Read file content synchronously
    */
   readFileSync(path: string): string {
-    try {
-      this.state.operations.reads++;
-      return this.state.backend.readFileSync(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+    return this.props.backend.readFileSync(path);
   }
 
   /**
    * Write file content synchronously
    */
   writeFileSync(path: string, data: string): void {
-    try {
-      this.state.operations.writes++;
-      this.state.backend.writeFileSync(path, data);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+    this.props.backend.writeFileSync(path, data);
   }
 
   /**
@@ -116,9 +122,9 @@ export class FileSystem implements IFileSystem {
    */
   existsSync(path: string): boolean {
     try {
-      return this.state.backend.existsSync(path);
+      return this.props.backend.existsSync(path);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -128,9 +134,9 @@ export class FileSystem implements IFileSystem {
    */
   deleteFileSync(path: string): void {
     try {
-      this.state.backend.deleteFileSync(path);
+      this.props.backend.deleteFileSync(path);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -140,9 +146,9 @@ export class FileSystem implements IFileSystem {
    */
   readDirSync(path: string): string[] {
     try {
-      return this.state.backend.readDirSync(path);
+      return this.props.backend.readDirSync(path);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -152,9 +158,9 @@ export class FileSystem implements IFileSystem {
    */
   ensureDirSync(path: string): void {
     try {
-      this.state.backend.ensureDirSync(path);
+      this.props.backend.ensureDirSync(path);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -164,9 +170,9 @@ export class FileSystem implements IFileSystem {
    */
   deleteDirSync(path: string): void {
     try {
-      this.state.backend.deleteDirSync(path);
+      this.props.backend.deleteDirSync(path);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -176,9 +182,9 @@ export class FileSystem implements IFileSystem {
    */
   chmodSync(path: string, mode: number): void {
     try {
-      this.state.backend.chmodSync(path, mode);
+      this.props.backend.chmodSync(path, mode);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -188,13 +194,13 @@ export class FileSystem implements IFileSystem {
    */
   statSync(path: string): import("./filesystem.interface").FileStats {
     try {
-      const result = this.state.backend.statSync?.(path);
+      const result = this.props.backend.statSync?.(path);
       if (!result) {
-        throw new Error(`statSync method not available on ${this.state.config.type} backend`);
+        throw new Error(`statSync method not available on ${this.props.config.type} backend`);
       }
       return result;
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -204,12 +210,12 @@ export class FileSystem implements IFileSystem {
    */
   clear(dirPath: string): void {
     try {
-      if (!this.state.backend.clear) {
-        throw new Error(`clear method not available on ${this.state.config.type} backend`);
+      if (!this.props.backend.clear) {
+        throw new Error(`clear method not available on ${this.props.config.type} backend`);
       }
-      this.state.backend.clear(dirPath);
+      this.props.backend.clear(dirPath);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -221,25 +227,53 @@ export class FileSystem implements IFileSystem {
   /**
    * TEACH - Provide filesystem capabilities to other units
    */
-  teach() {
+  teach(): TeachingContract {
     return {
-      // Unit-specific methods for advanced use cases
-      getStats: () => ({ ...this.state.operations }),
-      getBackendType: () => this.state.config.type,
-      getConfig: () => ({ ...this.state.config }),
-      
-      // Filesystem methods with Sync suffix (matches IFileSystem interface)
-      existsSync: (path: string) => this.existsSync(path),
-      readFileSync: (path: string) => this.readFileSync(path),
-      writeFileSync: (path: string, data: string) => this.writeFileSync(path, data),
-      deleteFileSync: (path: string) => this.deleteFileSync(path),
-      deleteDirSync: (path: string) => this.deleteDirSync(path),
-      readDirSync: (path: string) => this.readDirSync(path),
-      ensureDirSync: (path: string) => this.ensureDirSync(path),
-      chmodSync: (path: string, mode: number) => this.chmodSync(path, mode),
-      statSync: (path: string) => this.statSync(path),
-      clear: (dirPath: string) => this.clear(dirPath),
+      unitId: this.props.dna.id,
+      capabilities: {
+        readFileSync: (...args: unknown[]) => this.readFileSync(args[0] as string),
+        writeFileSync: (...args: unknown[]) => this.writeFileSync(args[0] as string, args[1] as string),
+        existsSync: (...args: unknown[]) => this.existsSync(args[0] as string),
+        deleteFileSync: (...args: unknown[]) => this.deleteFileSync(args[0] as string),
+        readDirSync: (...args: unknown[]) => this.readDirSync(args[0] as string),
+        ensureDirSync: (...args: unknown[]) => this.ensureDirSync(args[0] as string),
+        deleteDirSync: (...args: unknown[]) => this.deleteDirSync(args[0] as string),
+        chmodSync: (...args: unknown[]) => this.chmodSync(args[0] as string, args[1] as number),
+        statSync: (...args: unknown[]) => this.statSync(args[0] as string)
+      }
     };
+  }
+
+  whoami(): string {
+    return `FileSystem[${this.props.dna.id}]`;
+  }
+
+  capabilities(): string[] {
+    return ['readFileSync', 'writeFileSync', 'existsSync', 'deleteFileSync', 'readDirSync', 'ensureDirSync', 'deleteDirSync', 'chmodSync', 'statSync'];
+  }
+
+  help(): void {
+    console.log(`
+FileSystem Unit - Synchronous filesystem operations
+
+Capabilities:
+  readFileSync - Read file contents
+  writeFileSync - Write file data  
+  existsSync - Check if file exists
+  deleteFileSync - Delete file
+  readDirSync - List directory contents
+  ensureDirSync - Create directory if needed
+  deleteDirSync - Remove directory
+  chmodSync - Change file permissions
+  statSync - Get file statistics
+
+Usage:
+  const fs = FileSystem.create(config);
+  const data = fs.readFileSync('/path/to/file');
+  
+When learned by other units:
+  otherUnit.execute('${this.props.dna.id}.readFileSync', '/path/to/file');
+`);
   }
 
   // ==========================================
@@ -250,41 +284,38 @@ export class FileSystem implements IFileSystem {
    * Get operation statistics
    */
   getStats() {
-    return { ...this.state.operations };
+    return { ...this.props.operations };
   }
 
   /**
    * Get backend type
    */
   getBackendType() {
-    return this.state.config.type;
+    return this.props.config.type;
   }
 
   /**
    * Get configuration
    */
   getConfig() {
-    return { ...this.state.config };
+    return { ...this.props.config };
   }
 
   /**
    * Get direct access to the backend (escape hatch)
    */
   getBackend(): IFileSystem {
-    return this.state.backend;
+    return this.props.backend;
   }
 
   /**
-   * Switch to a new backend configuration
+   * Create a new FileSystem unit with different backend configuration
+   * Unit Architecture pattern: create new instance instead of mutation
    */
-  switchBackend<T extends SyncFilesystemBackendType>(
+  withBackend<T extends SyncFilesystemBackendType>(
     config: SyncFilesystemConfig<T>,
-  ): void {
-    const newBackend = FileSystem.createBackend(config);
-    this.state.backend = newBackend;
-    this.state.config = config;
-    // Reset stats when switching backends
-    this.state.operations = { reads: 0, writes: 0, errors: 0 };
+  ): FileSystem {
+    return FileSystem.create(config);
   }
 
   /**
@@ -330,37 +361,37 @@ export class FileSystem implements IFileSystem {
    
   getUsagePattern() {
         return {
-        reads: this.state.operations.reads,
-        backendType: this.state.config.type,
+        reads: this.props.operations.reads,
+        backendType: this.props.config.type,
         totalOperations:
-          this.state.operations.reads + this.state.operations.writes,
+          this.props.operations.reads + this.props.operations.writes,
         readWriteRatio:
-          this.state.operations.writes > 0
-            ? this.state.operations.reads / this.state.operations.writes
-            : this.state.operations.reads,
+          this.props.operations.writes > 0
+            ? this.props.operations.reads / this.props.operations.writes
+            : this.props.operations.reads,
         errorRate:
-          this.state.operations.errors /
-            (this.state.operations.reads + this.state.operations.writes) || 0,
+          this.props.operations.errors /
+            (this.props.operations.reads + this.props.operations.writes) || 0,
         }      
     }
 
     getErrorPatterns() {
       return {
-        totalErrors: this.state.operations.errors,
+        totalErrors: this.props.operations.errors,
         suggestion:
-          this.state.operations.errors > 10
-            ? `Consider switching from ${this.state.config.type} backend`
+          this.props.operations.errors > 10
+            ? `Consider switching from ${this.props.config.type} backend`
             : "System running smoothly",
-        backendType: this.state.config.type,
+        backendType: this.props.config.type,
       };
     }
 
       getPerformanceInsights() {
         return {
-          backendType: this.state.config.type,
+          backendType: this.props.config.type,
           isAsync: this.isAsync(),
           recommendation:
-            this.state.operations.reads + this.state.operations.writes > 1000
+            this.props.operations.reads + this.props.operations.writes > 1000
               ? "Consider optimizing your filesystem usage"
               : "System performing well",
       };
