@@ -44,11 +44,6 @@ export interface SyncFilesystemConfig<
 export interface SyncFileSystemState {
   backend: IFileSystem;
   config: SyncFilesystemConfig;
-  operations: {
-    reads: number;
-    writes: number;
-    errors: number;
-  };
 }
 
 /**
@@ -83,7 +78,7 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
 
     const props: SyncFileSystemProps = {
       dna: createUnitSchema({
-        id: 'filesystem',
+        id: 'fs',
         version: '1.0.0'
       }),
       backend,
@@ -107,14 +102,17 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Read file content synchronously
    */
   readFileSync(path: string): string {
-    return this.props.backend.readFileSync(path);
+
+    const normalizedPath = this.normalizePath(path);
+    return this.props.backend.readFileSync(normalizedPath);
   }
 
   /**
    * Write file content synchronously
    */
   writeFileSync(path: string, data: string): void {
-    this.props.backend.writeFileSync(path, data);
+    const normalizedPath = this.normalizePath(path);
+    this.props.backend.writeFileSync(normalizedPath, data);
   }
 
   /**
@@ -122,7 +120,8 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    */
   existsSync(path: string): boolean {
     try {
-      return this.props.backend.existsSync(path);
+      const normalizedPath = this.normalizePath(path);
+      return this.props.backend.existsSync(normalizedPath);
     } catch (error) {
       this.props.operations.errors++;
       throw error;
@@ -134,7 +133,8 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    */
   deleteFileSync(path: string): void {
     try {
-      this.props.backend.deleteFileSync(path);
+      const normalizedPath = this.normalizePath(path);
+      this.props.backend.deleteFileSync(normalizedPath);
     } catch (error) {
       this.props.operations.errors++;
       throw error;
@@ -157,12 +157,10 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Ensure directory exists synchronously
    */
   ensureDirSync(path: string): void {
-    try {
-      this.props.backend.ensureDirSync(path);
-    } catch (error) {
-      this.props.operations.errors++;
-      throw error;
-    }
+  
+      const normalizedPath = this.normalizePath(path);
+      this.props.backend.ensureDirSync(normalizedPath);
+  
   }
 
   /**
@@ -170,7 +168,8 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    */
   deleteDirSync(path: string): void {
     try {
-      this.props.backend.deleteDirSync(path);
+      const normalizedPath = this.normalizePath(path);
+      this.props.backend.deleteDirSync(normalizedPath);
     } catch (error) {
       this.props.operations.errors++;
       throw error;
@@ -181,43 +180,35 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Set file permissions synchronously
    */
   chmodSync(path: string, mode: number): void {
-    try {
-      this.props.backend.chmodSync(path, mode);
-    } catch (error) {
-      this.props.operations.errors++;
-      throw error;
-    }
+      const normalizedPath = this.normalizePath(path);
+      this.props.backend.chmodSync(normalizedPath, mode);
   }
 
   /**
    * Get file statistics synchronously
    */
   statSync(path: string): import("./filesystem.interface").FileStats {
-    try {
-      const result = this.props.backend.statSync?.(path);
+  
+      const normalizedPath = this.normalizePath(path);
+      const result = this.props.backend.statSync?.(normalizedPath);
       if (!result) {
         throw new Error(`statSync method not available on ${this.props.config.type} backend`);
       }
       return result;
-    } catch (error) {
-      this.props.operations.errors++;
-      throw error;
-    }
+  
   }
 
   /**
    * Clear directory contents synchronously
    */
   clear(dirPath: string): void {
-    try {
+
+      const normalizedPath = this.normalizePath(dirPath);
       if (!this.props.backend.clear) {
         throw new Error(`clear method not available on ${this.props.config.type} backend`);
       }
-      this.props.backend.clear(dirPath);
-    } catch (error) {
-      this.props.operations.errors++;
-      throw error;
-    }
+      this.props.backend.clear(normalizedPath);
+
   }
 
   // ==========================================
@@ -396,5 +387,19 @@ When learned by other units:
               : "System performing well",
       };
     }
+
+    /**
+   * Normalize path for backend compatibility
+
+   */
+  private normalizePath(path: string): string {
+    // Memory backend requires absolute paths
+    if (this.props.config.type === 'memory') {
+      return path.startsWith('/') ? path : `/${path}`;
+    }
+    
+    // Node, S3, GitHub handle paths natively
+    return path;
+  }
 
 }

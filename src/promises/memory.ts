@@ -29,10 +29,13 @@ export class MemFileSystem implements IAsyncFileSystem {
 
   async writeFile(path: string, data: string): Promise<void> {
     try {
-      // Ensure the directory exists before writing
-      const dirPath = path.substring(0, path.lastIndexOf("/"));
-      if (dirPath && !(await this.exists(dirPath))) {
-        await this.ensureDir(dirPath);
+      // Ensure the directory exists before writing (handle both absolute and relative paths)
+      const lastSlashIndex = path.lastIndexOf("/");
+      if (lastSlashIndex > 0) { // Only create directory if there's a meaningful parent directory
+        const dirPath = path.substring(0, lastSlashIndex);
+        if (!(await this.exists(dirPath))) {
+          await this.ensureDir(dirPath);
+        }
       }
 
       await memfs.promises.writeFile(path, data, { encoding: "utf8" });

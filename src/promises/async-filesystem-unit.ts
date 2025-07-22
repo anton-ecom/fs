@@ -5,7 +5,8 @@
  * No async/sync mixing, no runtime type checks, no zalgo.
  */
 
-import type { IAsyncFileSystem } from "./filesystem.interface";
+import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import { Unit, UnitSchema, createUnitSchema, type TeachingContract, type UnitProps } from '@synet/unit';
 
 import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
@@ -38,9 +39,9 @@ export interface AsyncFilesystemConfig<
 }
 
 /**
- * Async Filesystem Unit state
+ * Async Filesystem Unit properties following Unit Architecture
  */
-export interface AsyncFileSystemState {
+interface AsyncFileSystemProps extends UnitProps {
   backend: IAsyncFileSystem;
   config: AsyncFilesystemConfig;
   operations: {
@@ -53,11 +54,10 @@ export interface AsyncFileSystemState {
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations
  */
-export class AsyncFileSystem implements IAsyncFileSystem {
-  private state: AsyncFileSystemState;
+export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyncFileSystem {
 
-  private constructor(state: AsyncFileSystemState) {
-    this.state = state;
+  protected constructor(props: AsyncFileSystemProps) {
+    super(props);
   }
 
   /**
@@ -68,7 +68,11 @@ export class AsyncFileSystem implements IAsyncFileSystem {
   ): AsyncFileSystem {
     const backend = AsyncFileSystem.createBackend(config);
 
-    const state: AsyncFileSystemState = {
+    const props: AsyncFileSystemProps = {
+      dna: createUnitSchema({
+        id: 'fs-async',
+        version: '1.0.0'
+      }),
       backend,
       config,
       operations: {
@@ -76,9 +80,25 @@ export class AsyncFileSystem implements IAsyncFileSystem {
         writes: 0,
         errors: 0,
       },
+      created: new Date()
     };
 
-    return new AsyncFileSystem(state);
+    return new AsyncFileSystem(props);
+  }
+
+
+  /**
+   * Normalize path for backend compatibility
+
+   */
+  private normalizePath(path: string): string {
+    // Memory backend requires absolute paths
+    if (this.props.config.type === 'memory') {
+      return path.startsWith('/') ? path : `/${path}`;
+    }
+    
+    // Node, S3, GitHub handle paths natively
+    return path;
   }
 
   // ==========================================
@@ -89,38 +109,30 @@ export class AsyncFileSystem implements IAsyncFileSystem {
    * Read file content asynchronously
    */
   async readFile(path: string): Promise<string> {
-    try {
-      this.state.operations.reads++;
-      return await this.state.backend.readFile(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+
+      const normalizedPath = this.normalizePath(path);
+      return await this.props.backend.readFile(normalizedPath);
+
   }
 
   /**
    * Write file content asynchronously
    */
   async writeFile(path: string, data: string): Promise<void> {
-    try {
-      this.state.operations.writes++;
-      await this.state.backend.writeFile(path, data);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+    
+      const normalizedPath = this.normalizePath(path);
+      await this.props.backend.writeFile(normalizedPath, data);
+
   }
 
   /**
    * Check if file/directory exists asynchronously
    */
   async exists(path: string): Promise<boolean> {
-    try {
-      return await this.state.backend.exists(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+
+      const normalizedPath = this.normalizePath(path);
+      return await this.props.backend.exists(normalizedPath);
+ 
   }
 
   /**
@@ -128,9 +140,10 @@ export class AsyncFileSystem implements IAsyncFileSystem {
    */
   async deleteFile(path: string): Promise<void> {
     try {
-      await this.state.backend.deleteFile(path);
+      const normalizedPath = this.normalizePath(path);
+      await this.props.backend.deleteFile(normalizedPath);
     } catch (error) {
-      this.state.operations.errors++;
+      this.props.operations.errors++;
       throw error;
     }
   }
@@ -139,79 +152,67 @@ export class AsyncFileSystem implements IAsyncFileSystem {
    * Read directory contents asynchronously
    */
   async readDir(path: string): Promise<string[]> {
-    try {
-      return await this.state.backend.readDir(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+ 
+      const normalizedPath = this.normalizePath(path);
+      return await this.props.backend.readDir(normalizedPath);
+ 
   }
 
   /**
    * Ensure directory exists asynchronously
    */
   async ensureDir(path: string): Promise<void> {
-    try {
-      await this.state.backend.ensureDir(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+  
+      const normalizedPath = this.normalizePath(path);
+      await this.props.backend.ensureDir(normalizedPath);
+
   }
 
   /**
    * Delete directory asynchronously
    */
   async deleteDir(path: string): Promise<void> {
-    try {
-      await this.state.backend.deleteDir(path);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+   
+      const normalizedPath = this.normalizePath(path);
+      await this.props.backend.deleteDir(normalizedPath);
+ 
   }
 
   /**
    * Set file permissions asynchronously
    */
   async chmod(path: string, mode: number): Promise<void> {
-    try {
-      await this.state.backend.chmod(path, mode);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+  
+      const normalizedPath = this.normalizePath(path);
+      await this.props.backend.chmod(normalizedPath, mode);
+ 
   }
 
   /**
    * Get file statistics asynchronously
    */
-  async stat(path: string): Promise<import("./filesystem.interface").FileStats> {
-    try {
-      const result = await this.state.backend.stat?.(path);
+  async stat(path: string): Promise<FileStats> {
+    
+      const normalizedPath = this.normalizePath(path);
+      const result = await this.props.backend.stat?.(normalizedPath);
       if (!result) {
-        throw new Error(`stat method not available on ${this.state.config.type} backend`);
+        throw new Error(`stat method not available on ${this.props.config.type} backend`);
       }
       return result;
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+  
   }
 
   /**
    * Clear directory contents asynchronously
    */
   async clear(dirPath: string): Promise<void> {
-    try {
-      if (!this.state.backend.clear) {
-        throw new Error(`clear method not available on ${this.state.config.type} backend`);
+   
+      if (!this.props.backend.clear) {
+        throw new Error(`clear method not available on ${this.props.config.type} backend`);
       }
-      await this.state.backend.clear(dirPath);
-    } catch (error) {
-      this.state.operations.errors++;
-      throw error;
-    }
+      const normalizedPath = this.normalizePath(dirPath);
+      await this.props.backend.clear(normalizedPath);
+   
   }
 
   // ==========================================
@@ -221,21 +222,53 @@ export class AsyncFileSystem implements IAsyncFileSystem {
   /**
    * TEACH - Provide filesystem capabilities to other units
    */
-  teach() {
+  teach(): TeachingContract {
     return {
-      // Unit-specific methods for advanced use cases
-      getStats: () => ({ ...this.state.operations }),
-      getBackendType: () => this.state.config.type,
-      getConfig: () => ({ ...this.state.config }),
-      
-      // Wrapped methods for teaching pattern (optional usage)
-      readFile: (path: string) => this.readFile(path),
-      writeFile: (path: string, data: string) => this.writeFile(path, data),
-      exists: (path: string) => this.exists(path),
-      deleteFile: (path: string) => this.deleteFile(path),
-      readDir: (path: string) => this.readDir(path),
-      ensureDir: (path: string) => this.ensureDir(path),
+      unitId: this.props.dna.id,
+      capabilities: {
+        readFile: (...args: unknown[]) => this.readFile(args[0] as string),
+        writeFile: (...args: unknown[]) => this.writeFile(args[0] as string, args[1] as string),
+        exists: (...args: unknown[]) => this.exists(args[0] as string),
+        deleteFile: (...args: unknown[]) => this.deleteFile(args[0] as string),
+        readDir: (...args: unknown[]) => this.readDir(args[0] as string),
+        ensureDir: (...args: unknown[]) => this.ensureDir(args[0] as string),
+        deleteDir: (...args: unknown[]) => this.deleteDir(args[0] as string),
+        chmod: (...args: unknown[]) => this.chmod(args[0] as string, args[1] as number),
+        stat: (...args: unknown[]) => this.stat(args[0] as string)
+      }
     };
+  }
+
+  whoami(): string {
+    return `AsyncFileSystem[${this.props.dna.id}]`;
+  }
+
+  capabilities(): string[] {
+    return ['readFile', 'writeFile', 'exists', 'deleteFile', 'readDir', 'ensureDir', 'deleteDir', 'chmod', 'stat'];
+  }
+
+  help(): void {
+    console.log(`
+AsyncFileSystem Unit - Asynchronous filesystem operations
+
+Capabilities:
+  readFile - Read file contents
+  writeFile - Write file data  
+  exists - Check if file exists
+  deleteFile - Delete file
+  readDir - List directory contents
+  ensureDir - Create directory if needed
+  deleteDir - Remove directory
+  chmod - Change file permissions
+  stat - Get file statistics
+
+Usage:
+  const fs = AsyncFileSystem.create(config);
+  const data = await fs.readFile('/path/to/file');
+  
+When learned by other units:
+  await otherUnit.execute('${this.props.dna.id}.readFile', '/path/to/file');
+`);
   }
 
   // ==========================================
@@ -246,41 +279,38 @@ export class AsyncFileSystem implements IAsyncFileSystem {
    * Get operation statistics
    */
   getStats() {
-    return { ...this.state.operations };
+    return { ...this.props.operations };
   }
 
   /**
    * Get backend type
    */
   getBackendType() {
-    return this.state.config.type;
+    return this.props.config.type;
   }
 
   /**
    * Get configuration
    */
   getConfig() {
-    return { ...this.state.config };
+    return { ...this.props.config };
   }
 
   /**
    * Get direct access to the backend (escape hatch)
    */
   getBackend(): IAsyncFileSystem {
-    return this.state.backend;
+    return this.props.backend;
   }
 
   /**
-   * Switch to a new backend configuration
+   * Create a new AsyncFileSystem unit with different backend configuration
+   * Unit Architecture pattern: create new instance instead of mutation
    */
-  switchBackend<T extends AsyncFilesystemBackendType>(
+  withBackend<T extends AsyncFilesystemBackendType>(
     config: AsyncFilesystemConfig<T>,
-  ): void {
-    const newBackend = AsyncFileSystem.createBackend(config);
-    this.state.backend = newBackend;
-    this.state.config = config;
-    // Reset stats when switching backends
-    this.state.operations = { reads: 0, writes: 0, errors: 0 };
+  ): AsyncFileSystem {
+    return AsyncFileSystem.create(config);
   }
 
   /**
@@ -323,41 +353,42 @@ export class AsyncFileSystem implements IAsyncFileSystem {
     return true; // This unit is always async
   }
 
-    getUsagePattern() {
-        return {
-        reads: this.state.operations.reads,
-        backendType: this.state.config.type,
-        totalOperations:
-          this.state.operations.reads + this.state.operations.writes,
-        readWriteRatio:
-          this.state.operations.writes > 0
-            ? this.state.operations.reads / this.state.operations.writes
-            : this.state.operations.reads,
-        errorRate:
-          this.state.operations.errors /
-            (this.state.operations.reads + this.state.operations.writes) || 0,
-        }      
-    }
+  getUsagePattern() {
+    return {
+      reads: this.props.operations.reads,
+      backendType: this.props.config.type,
+      totalOperations:
+        this.props.operations.reads + this.props.operations.writes,
+      readWriteRatio:
+        this.props.operations.writes > 0
+          ? this.props.operations.reads / this.props.operations.writes
+          : this.props.operations.reads,
+      errorRate:
+        this.props.operations.errors /
+          (this.props.operations.reads + this.props.operations.writes) || 0,
+    }      
+  }
 
-    getErrorPatterns() {
-      return {
-        totalErrors: this.state.operations.errors,
-        suggestion:
-          this.state.operations.errors > 10
-            ? `Consider switching from ${this.state.config.type} backend`
-            : "System running smoothly",
-        backendType: this.state.config.type,
-      };
-    }
+  getErrorPatterns() {
+    return {
+      totalErrors: this.props.operations.errors,
+      suggestion:
+        this.props.operations.errors > 10
+          ? `Consider switching from ${this.props.config.type} backend`
+          : "System running smoothly",
+      backendType: this.props.config.type,
+    };
+  }
 
-      getPerformanceInsights() {
-        return {
-          backendType: this.state.config.type,
-          isAsync: this.isAsync(),
-          recommendation:
-            this.state.operations.reads + this.state.operations.writes > 1000
-              ? "Consider optimizing your filesystem usage"
-              : "System performing well",
-      };
-    }
+  getPerformanceInsights() {
+    return {
+      backendType: this.props.config.type,
+      isAsync: this.isAsync(),
+      recommendation:
+        this.props.operations.reads + this.props.operations.writes > 1000
+          ? "Consider optimizing your filesystem usage"
+          : "System performing well",
+    };
+  }
+
 }

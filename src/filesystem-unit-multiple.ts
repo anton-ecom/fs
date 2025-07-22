@@ -227,7 +227,6 @@ export class FilesystemUnit {
 
       optimizeBackendOrder: () => {
         // In a real implementation, reorder backends based on performance
-        console.log("Learning from filesystem usage patterns...");
         return this.state.fallbacks;
       },
     };

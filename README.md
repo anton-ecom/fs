@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.5   
+version: v.1.0.6   
 description: Files are artefacts of identity
 ```
 
@@ -75,7 +75,7 @@ This pattern provides a consistent filesystem abstraction that enables dependenc
 - Paid - lock/unlock files/folders for users with NKeys or by issuing DID VCs, via event observer. Verifiable proof and with selective disclosure.
 - Unique - write same files, with each storing its historical context.
 - Auto-backup - automatically back-up your files with versions.
-- Highly Secured (HSFS) - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why. Mark classified files, protect access through 2FA/VC/NKeys.
+- High Security File System (@HSFS) - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why. Mark classified files, protect access through 2FA/VC/NKeys.
 
 **Distributed**:
 
