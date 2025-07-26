@@ -88,6 +88,11 @@ export {
   type CloudflareR2Options as AsyncCloudflareR2Options
 } from './promises/r2';
 export {
+  DigitalOceanSpacesFileSystem as AsyncDigitalOceanSpacesFileSystem,
+  createDigitalOceanSpacesFileSystem as createAsyncDigitalOceanSpacesFileSystem,
+  type DigitalOceanSpacesOptions as AsyncDigitalOceanSpacesOptions
+} from './promises/digitalocean';
+export {
   GitHubFileSystem as AsyncGitHubFileSystem,
   type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions
 } from './promises/github';
@@ -141,3 +146,8 @@ export {
   createGCSFileSystem, 
   type GCSFileSystemOptions 
 } from './promises/gcs';
+export { 
+  DigitalOceanSpacesFileSystem, 
+  createDigitalOceanSpacesFileSystem, 
+  type DigitalOceanSpacesOptions 
+} from './promises/digitalocean';
