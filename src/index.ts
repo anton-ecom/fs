@@ -13,9 +13,19 @@ export type {
   AsyncFilesystemConfig 
 } from './promises/async-filesystem-unit';
 
-// Synchronous implementations
+// Core interfaces
+export { IFileSystem } from './filesystem.interface';
+export { IAsyncFileSystem } from './promises/filesystem.interface';
+
+// ==========================================
+// SYNCHRONOUS IMPLEMENTATIONS (local/fast only)
+// ==========================================
+
+// Base sync implementations - truly synchronous
 export { NodeFileSystem } from './node';
 export { MemFileSystem } from './memory';
+
+// Enhanced sync implementations
 export { 
   ObservableFileSystem, 
   FilesystemEventTypes, 
@@ -47,26 +57,42 @@ export {
   createCachedFileSystem,
   type CachedFileSystemOptions
 } from './cached';
-export {
-  S3FileSystem,
-  createS3FileSystem,
-  type S3FileSystemOptions
-} from './s3';
-export {
-  GCSFileSystem,
-  createGCSFileSystem,
-  type GCSFileSystemOptions
-} from './gcs';
-export {
-  GitHubFileSystem,
-  type GitHubFileSystemOptions
-} from './github';
 
-// Asynchronous implementations
-export { IAsyncFileSystem } from './promises/filesystem.interface';
-export { IFileSystem } from './filesystem.interface';
+// ==========================================
+// ASYNCHRONOUS IMPLEMENTATIONS (including cloud)
+// ==========================================
+
+// Base async implementations
 export { NodeFileSystem as AsyncNodeFileSystem } from './promises/node';
 export { MemFileSystem as AsyncMemFileSystem } from './promises/memory';
+
+// Cloud storage implementations (async only)
+export {
+  S3FileSystem as AsyncS3FileSystem,
+  createS3FileSystem as createAsyncS3FileSystem,
+  type S3FileSystemOptions as AsyncS3FileSystemOptions
+} from './promises/s3';
+export {
+  GCSFileSystem as AsyncGCSFileSystem,
+  createGCSFileSystem as createAsyncGCSFileSystem,
+  type GCSFileSystemOptions as AsyncGCSFileSystemOptions
+} from './promises/gcs';
+export {
+  AzureBlobStorageFileSystem as AsyncAzureBlobStorageFileSystem,
+  createAzureBlobStorageFileSystem as createAsyncAzureBlobStorageFileSystem,
+  type AzureBlobStorageOptions as AsyncAzureBlobStorageOptions
+} from './promises/azure';
+export {
+  CloudflareR2FileSystem as AsyncCloudflareR2FileSystem,
+  createCloudflareR2FileSystem as createAsyncCloudflareR2FileSystem,
+  type CloudflareR2Options as AsyncCloudflareR2Options
+} from './promises/r2';
+export {
+  GitHubFileSystem as AsyncGitHubFileSystem,
+  type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions
+} from './promises/github';
+
+// Enhanced async implementations
 export { 
   ObservableFileSystem as AsyncObservableFileSystem,
   FilesystemEventTypes as AsyncFilesystemEventTypes,
@@ -98,17 +124,20 @@ export {
   createCachedFileSystem as createAsyncCachedFileSystem,
   type CachedFileSystemOptions as AsyncCachedFileSystemOptions
 } from './promises/cached';
-export {
-  S3FileSystem as AsyncS3FileSystem,
-  createS3FileSystem as createAsyncS3FileSystem,
-  type S3FileSystemOptions as AsyncS3FileSystemOptions
-} from './promises/s3';
-export {
-  GCSFileSystem as AsyncGCSFileSystem,
-  createGCSFileSystem as createAsyncGCSFileSystem,
-  type GCSFileSystemOptions as AsyncGCSFileSystemOptions
+
+// Direct exports for convenience (main implementations)
+export { 
+  CloudflareR2FileSystem, 
+  createCloudflareR2FileSystem, 
+  type CloudflareR2Options 
+} from './promises/r2';
+export { 
+  AzureBlobStorageFileSystem, 
+  createAzureBlobStorageFileSystem, 
+  type AzureBlobStorageOptions 
+} from './promises/azure';
+export { 
+  GCSFileSystem, 
+  createGCSFileSystem, 
+  type GCSFileSystemOptions 
 } from './promises/gcs';
-export {
-  GitHubFileSystem as AsyncGitHubFileSystem,
-  type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions
-} from './promises/github';

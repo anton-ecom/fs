@@ -13,11 +13,13 @@ import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
 import { S3FileSystem, type S3FileSystemOptions } from "./s3";
 import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
+import { AzureBlobStorageFileSystem, type AzureBlobStorageOptions } from "./azure";
+import { CloudflareR2FileSystem, type CloudflareR2Options } from "./r2";
 
 /**
  * Supported async filesystem backend types
  */
-export type AsyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "gcs";
+export type AsyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "gcs" | "azure" | "r2";
 
 /**
  * Options for different async filesystem backends
@@ -28,6 +30,8 @@ export type AsyncFilesystemBackendOptions = {
   github: GitHubFileSystemOptions;
   s3: S3FileSystemOptions;
   gcs: GCSFileSystemOptions;
+  azure: AzureBlobStorageOptions;
+  r2: CloudflareR2Options;
 };
 
 /**
@@ -352,6 +356,22 @@ When learned by other units:
           throw new Error("GCS filesystem requires options");
         }
         return new GCSFileSystem(gcsOptions);
+      }
+
+      case "azure": {
+        const azureOptions = options as AsyncFilesystemBackendOptions["azure"];
+        if (!azureOptions) {
+          throw new Error("Azure Blob Storage filesystem requires options");
+        }
+        return new AzureBlobStorageFileSystem(azureOptions);
+      }
+
+      case "r2": {
+        const r2Options = options as AsyncFilesystemBackendOptions["r2"];
+        if (!r2Options) {
+          throw new Error("Cloudflare R2 filesystem requires options");
+        }
+        return new CloudflareR2FileSystem(r2Options);
       }
 
       default:

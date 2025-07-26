@@ -2,22 +2,20 @@
  * Sync Filesystem Unit - Pure Synchronous Operations
  *
  * This unit provides synchronous filesystem operations with direct method access.
- * No async/sync mixing, no runtime type checks, no zalgo.
+ * Only includes backends that work well synchronously: node and memory.
+ * Cloud storage (GitHub, S3, GCS) should use the async filesystem unit.
  */
 
 import type { IFileSystem } from "./filesystem.interface";
 import { Unit, UnitSchema, createUnitSchema, type TeachingContract, type UnitProps } from '@synet/unit';
 
-import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
-import { S3FileSystem, type S3FileSystemOptions } from "./s3";
-import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
 
 /**
  * Supported sync filesystem backend types
  */
-export type SyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "gcs";
+export type SyncFilesystemBackendType = "node" | "memory";
 
 /**
  * Options for different sync filesystem backends
@@ -25,9 +23,6 @@ export type SyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "g
 export type SyncFilesystemBackendOptions = {
   node: Record<string, never>;
   memory: Record<string, never>;
-  github: GitHubFileSystemOptions;
-  s3: S3FileSystemOptions;
-  gcs: GCSFileSystemOptions;
 };
 
 /**
@@ -326,30 +321,6 @@ When learned by other units:
       case "memory":
         return new MemFileSystem();
 
-      case "github": {
-        const githubOptions = options as SyncFilesystemBackendOptions["github"];
-        if (!githubOptions) {
-          throw new Error("GitHub filesystem requires options");
-        }
-        return new GitHubFileSystem(githubOptions);
-      }
-
-      case "s3": {
-        const s3Options = options as SyncFilesystemBackendOptions["s3"];
-        if (!s3Options) {
-          throw new Error("S3 filesystem requires options");
-        }
-        return new S3FileSystem(s3Options);
-      }
-
-      case "gcs": {
-        const gcsOptions = options as SyncFilesystemBackendOptions["gcs"];
-        if (!gcsOptions) {
-          throw new Error("GCS filesystem requires options");
-        }
-        return new GCSFileSystem(gcsOptions);
-      }
-
       default:
         throw new Error(`Unsupported sync filesystem backend: ${type}`);
     }
@@ -398,9 +369,8 @@ When learned by other units:
       };
     }
 
-    /**
+  /**
    * Normalize path for backend compatibility
-
    */
   private normalizePath(path: string): string {
     // Memory backend requires absolute paths
@@ -408,7 +378,7 @@ When learned by other units:
       return path.startsWith('/') ? path : `/${path}`;
     }
     
-    // Node, S3, GitHub handle paths natively
+    // Node backend handles paths natively
     return path;
   }
 

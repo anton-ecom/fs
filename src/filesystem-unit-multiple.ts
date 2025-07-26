@@ -8,13 +8,10 @@
 import type { IFileSystem } from "./filesystem.interface";
 import type { IAsyncFileSystem } from "./promises/filesystem.interface";
 
-import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
 // Import all sync backends
 import { NodeFileSystem } from "./node";
-import { S3FileSystem, type S3FileSystemOptions } from "./s3";
 
-import { GitHubFileSystem as AsyncGitHubFileSystem } from "./promises/github";
 import { MemFileSystem as AsyncMemFileSystem } from "./promises/memory";
 // Import all async backends
 import { NodeFileSystem as AsyncNodeFileSystem } from "./promises/node";
@@ -23,7 +20,7 @@ import { S3FileSystem as AsyncS3FileSystem } from "./promises/s3";
 /**
  * Supported filesystem backend types
  */
-export type FilesystemBackendType = "node" | "memory" | "github" | "s3";
+export type FilesystemBackendType = "node" | "memory";
 
 /**
  * Options for different filesystem backends
@@ -31,8 +28,6 @@ export type FilesystemBackendType = "node" | "memory" | "github" | "s3";
 export type FilesystemBackendOptions = {
   node: Record<string, never>;
   memory: Record<string, never>;
-  github: GitHubFileSystemOptions;
-  s3: S3FileSystemOptions;
 };
 
 /**
@@ -247,26 +242,6 @@ export class FilesystemUnit {
       case "memory":
         return async ? new AsyncMemFileSystem() : new MemFileSystem();
 
-      case "github": {
-        const githubOptions = options as FilesystemBackendOptions["github"];
-        if (!githubOptions) {
-          throw new Error("GitHub filesystem requires options");
-        }
-        return async
-          ? new AsyncGitHubFileSystem(githubOptions)
-          : new GitHubFileSystem(githubOptions);
-      }
-
-      case "s3": {
-        const s3Options = options as FilesystemBackendOptions["s3"];
-        if (!s3Options) {
-          throw new Error("S3 filesystem requires options");
-        }
-        return async
-          ? new AsyncS3FileSystem(s3Options)
-          : new S3FileSystem(s3Options);
-      }
-
       default:
         throw new Error(`Unsupported filesystem backend: ${type}`);
     }
@@ -322,42 +297,5 @@ export const FilesystemUnits = {
       backends: [{ type: "memory" }, { type: "node" }],
       primary: "memory",
       fallbacks: ["node"],
-    }),
-
-  /**
-   * Production setup: S3 primary, Node fallback
-   */
-  production: (s3Options: S3FileSystemOptions) =>
-    FilesystemUnit.create({
-      backends: [{ type: "s3", options: s3Options }, { type: "node" }],
-      primary: "s3",
-      fallbacks: ["node"],
-    }),
-
-  /**
-   * GitHub-backed configuration storage
-   */
-  github: (githubOptions: GitHubFileSystemOptions) =>
-    FilesystemUnit.create({
-      backends: [
-        { type: "github", options: githubOptions },
-        { type: "memory" },
-      ],
-      primary: "github",
-      fallbacks: ["memory"],
-    }),
-
-  /**
-   * Multi-tier setup: Memory cache, S3 storage, Node backup
-   */
-  multiTier: (s3Options: S3FileSystemOptions) =>
-    FilesystemUnit.create({
-      backends: [
-        { type: "memory" },
-        { type: "s3", options: s3Options },
-        { type: "node" },
-      ],
-      primary: "memory",
-      fallbacks: ["s3", "node"],
     }),
 };

@@ -6,11 +6,11 @@
  * 
  * Usage:
  * ```typescript
- * // Sync filesystems
+ * // Sync filesystems (local only)
  * const syncFs = FS.sync.memory();
  * const content = syncFs.readFile('./file.txt'); // Returns string
  * 
- * // Async filesystems
+ * // Async filesystems (including cloud)
  * const asyncFs = FS.async.s3(s3Options);
  * const content = await asyncFs.readFile('./file.txt'); // Returns Promise<string>
  * ```
@@ -18,15 +18,18 @@
 
 import { FileSystem } from './filesystem-unit';
 import { AsyncFileSystem } from './promises/async-filesystem-unit';
-import type { GitHubFileSystemOptions } from './github';
-import type { S3FileSystemOptions } from './s3';
+import type { GitHubFileSystemOptions } from './promises/github';
+import type { S3FileSystemOptions } from './promises/s3';
+import type { GCSFileSystemOptions } from './promises/gcs';
+import type { AzureBlobStorageOptions } from './promises/azure';
+import type { CloudflareR2Options } from './promises/r2';
 
 /**
  * Clean filesystem factory with sync/async separation
  */
 export const FS = {
   /**
-   * Synchronous filesystem operations
+   * Synchronous filesystem operations (local only)
    */
   sync: {
     /**
@@ -38,24 +41,10 @@ export const FS = {
      * Node.js filesystem (sync) - Local file operations
      */
     node: () => FileSystem.create({ type: "node" }),
-
-    /**
-     * GitHub storage (sync) - Git-based file storage
-     * Note: GitHub operations are naturally async, sync version may have limitations
-     */
-    github: (options: GitHubFileSystemOptions) => 
-      FileSystem.create({ type: "github", options }),
-
-    /**
-     * S3 storage (sync) - Cloud storage
-     * Note: S3 operations are naturally async, sync version may have limitations
-     */
-    s3: (options: S3FileSystemOptions) => 
-      FileSystem.create({ type: "s3", options }),
   },
 
   /**
-   * Asynchronous filesystem operations
+   * Asynchronous filesystem operations (including cloud)
    */
   async: {
     /**
@@ -79,6 +68,24 @@ export const FS = {
      */
     s3: (options: S3FileSystemOptions) => 
       AsyncFileSystem.create({ type: "s3", options }),
+
+    /**
+     * Google Cloud Storage (async) - Cloud storage with proper async handling
+     */
+    gcs: (options: GCSFileSystemOptions) => 
+      AsyncFileSystem.create({ type: "gcs", options }),
+
+    /**
+     * Azure Blob Storage (async) - Cloud storage with proper async handling
+     */
+    azure: (options: AzureBlobStorageOptions) => 
+      AsyncFileSystem.create({ type: "azure", options }),
+
+    /**
+     * Cloudflare R2 (async) - S3-compatible cloud storage with proper async handling
+     */
+    r2: (options: CloudflareR2Options) => 
+      AsyncFileSystem.create({ type: "r2", options }),
   },
 
   /**
@@ -108,7 +115,22 @@ export const FS = {
     /**
      * Production cloud: S3 with proper async handling
      */
-    production: (s3Options: S3FileSystemOptions) => FS.async.s3(s3Options),
+    productionS3: (s3Options: S3FileSystemOptions) => FS.async.s3(s3Options),
+
+    /**
+     * Production cloud: GCS with proper async handling
+     */
+    productionGCS: (gcsOptions: GCSFileSystemOptions) => FS.async.gcs(gcsOptions),
+
+    /**
+     * Production cloud: Azure Blob Storage with proper async handling
+     */
+    productionAzure: (azureOptions: AzureBlobStorageOptions) => FS.async.azure(azureOptions),
+
+    /**
+     * Production cloud: Cloudflare R2 with proper async handling
+     */
+    productionR2: (r2Options: CloudflareR2Options) => FS.async.r2(r2Options),
 
     /**
      * Git-based storage: GitHub with async operations
@@ -137,8 +159,11 @@ export type {
 export const FileSystems = {
   memory: () => FS.sync.memory(),
   node: () => FS.sync.node(),
-  github: (options: GitHubFileSystemOptions) => FS.sync.github(options),
-  s3: (options: S3FileSystemOptions) => FS.sync.s3(options),
   development: () => FS.presets.development(),
-  production: (s3Options: S3FileSystemOptions) => FS.presets.production(s3Options),
+  // Cloud storage now requires explicit async usage
+  s3: (options: S3FileSystemOptions) => FS.async.s3(options),
+  github: (options: GitHubFileSystemOptions) => FS.async.github(options),
+  gcs: (options: GCSFileSystemOptions) => FS.async.gcs(options),
+  azure: (options: AzureBlobStorageOptions) => FS.async.azure(options),
+  r2: (options: CloudflareR2Options) => FS.async.r2(options),
 };
