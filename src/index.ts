@@ -48,6 +48,16 @@ export {
   type CachedFileSystemOptions
 } from './cached';
 export {
+  S3FileSystem,
+  createS3FileSystem,
+  type S3FileSystemOptions
+} from './s3';
+export {
+  GCSFileSystem,
+  createGCSFileSystem,
+  type GCSFileSystemOptions
+} from './gcs';
+export {
   GitHubFileSystem,
   type GitHubFileSystemOptions
 } from './github';
@@ -88,6 +98,16 @@ export {
   createCachedFileSystem as createAsyncCachedFileSystem,
   type CachedFileSystemOptions as AsyncCachedFileSystemOptions
 } from './promises/cached';
+export {
+  S3FileSystem as AsyncS3FileSystem,
+  createS3FileSystem as createAsyncS3FileSystem,
+  type S3FileSystemOptions as AsyncS3FileSystemOptions
+} from './promises/s3';
+export {
+  GCSFileSystem as AsyncGCSFileSystem,
+  createGCSFileSystem as createAsyncGCSFileSystem,
+  type GCSFileSystemOptions as AsyncGCSFileSystemOptions
+} from './promises/gcs';
 export {
   GitHubFileSystem as AsyncGitHubFileSystem,
   type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions

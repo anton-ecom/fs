@@ -12,11 +12,12 @@ import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
 import { S3FileSystem, type S3FileSystemOptions } from "./s3";
+import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
 
 /**
  * Supported async filesystem backend types
  */
-export type AsyncFilesystemBackendType = "node" | "memory" | "github" | "s3";
+export type AsyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "gcs";
 
 /**
  * Options for different async filesystem backends
@@ -26,6 +27,7 @@ export type AsyncFilesystemBackendOptions = {
   memory: Record<string, never>;
   github: GitHubFileSystemOptions;
   s3: S3FileSystemOptions;
+  gcs: GCSFileSystemOptions;
 };
 
 /**
@@ -342,6 +344,14 @@ When learned by other units:
           throw new Error("S3 filesystem requires options");
         }
         return new S3FileSystem(s3Options);
+      }
+
+      case "gcs": {
+        const gcsOptions = options as AsyncFilesystemBackendOptions["gcs"];
+        if (!gcsOptions) {
+          throw new Error("GCS filesystem requires options");
+        }
+        return new GCSFileSystem(gcsOptions);
       }
 
       default:
