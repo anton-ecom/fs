@@ -1,28 +1,28 @@
 /**
  * FS - Clean Factory for Filesystem Units
- * 
+ *
  * Provides a clean, organized way to create filesystem units with
  * clear separation between sync and async operations.
- * 
+ *
  * Usage:
  * ```typescript
  * // Sync filesystems (local only)
  * const syncFs = FS.sync.memory();
  * const content = syncFs.readFile('./file.txt'); // Returns string
- * 
+ *
  * // Async filesystems (including cloud)
  * const asyncFs = FS.async.s3(s3Options);
  * const content = await asyncFs.readFile('./file.txt'); // Returns Promise<string>
  * ```
  */
 
-import { FileSystem } from './filesystem-unit';
-import { AsyncFileSystem } from './promises/async-filesystem-unit';
-import type { GitHubFileSystemOptions } from './promises/github';
-import type { S3FileSystemOptions } from './promises/s3';
-import type { GCSFileSystemOptions } from './promises/gcs';
-import type { AzureBlobStorageOptions } from './promises/azure';
-import type { CloudflareR2Options } from './promises/r2';
+import { FileSystem } from "./filesystem-unit";
+import { AsyncFileSystem } from "./promises/async-filesystem-unit";
+import type { AzureBlobStorageOptions } from "./promises/azure";
+import type { GCSFileSystemOptions } from "./promises/gcs";
+import type { GitHubFileSystemOptions } from "./promises/github";
+import type { CloudflareR2Options } from "./promises/r2";
+import type { S3FileSystemOptions } from "./promises/s3";
 
 /**
  * Clean filesystem factory with sync/async separation
@@ -60,31 +60,31 @@ export const FS = {
     /**
      * GitHub storage (async) - Git-based file storage with proper async handling
      */
-    github: (options: GitHubFileSystemOptions) => 
+    github: (options: GitHubFileSystemOptions) =>
       AsyncFileSystem.create({ type: "github", options }),
 
     /**
      * S3 storage (async) - Cloud storage with proper async handling
      */
-    s3: (options: S3FileSystemOptions) => 
+    s3: (options: S3FileSystemOptions) =>
       AsyncFileSystem.create({ type: "s3", options }),
 
     /**
      * Google Cloud Storage (async) - Cloud storage with proper async handling
      */
-    gcs: (options: GCSFileSystemOptions) => 
+    gcs: (options: GCSFileSystemOptions) =>
       AsyncFileSystem.create({ type: "gcs", options }),
 
     /**
      * Azure Blob Storage (async) - Cloud storage with proper async handling
      */
-    azure: (options: AzureBlobStorageOptions) => 
+    azure: (options: AzureBlobStorageOptions) =>
       AsyncFileSystem.create({ type: "azure", options }),
 
     /**
      * Cloudflare R2 (async) - S3-compatible cloud storage with proper async handling
      */
-    r2: (options: CloudflareR2Options) => 
+    r2: (options: CloudflareR2Options) =>
       AsyncFileSystem.create({ type: "r2", options }),
   },
 
@@ -120,12 +120,14 @@ export const FS = {
     /**
      * Production cloud: GCS with proper async handling
      */
-    productionGCS: (gcsOptions: GCSFileSystemOptions) => FS.async.gcs(gcsOptions),
+    productionGCS: (gcsOptions: GCSFileSystemOptions) =>
+      FS.async.gcs(gcsOptions),
 
     /**
      * Production cloud: Azure Blob Storage with proper async handling
      */
-    productionAzure: (azureOptions: AzureBlobStorageOptions) => FS.async.azure(azureOptions),
+    productionAzure: (azureOptions: AzureBlobStorageOptions) =>
+      FS.async.azure(azureOptions),
 
     /**
      * Production cloud: Cloudflare R2 with proper async handling
@@ -135,22 +137,23 @@ export const FS = {
     /**
      * Git-based storage: GitHub with async operations
      */
-    git: (githubOptions: GitHubFileSystemOptions) => FS.async.github(githubOptions),
-  }
+    git: (githubOptions: GitHubFileSystemOptions) =>
+      FS.async.github(githubOptions),
+  },
 };
 
 // Re-export the core units for direct usage if needed
 export { FileSystem, AsyncFileSystem };
-export type { 
-  SyncFilesystemBackendType, 
-  SyncFilesystemBackendOptions, 
-  SyncFilesystemConfig 
-} from './filesystem-unit';
-export type { 
-  AsyncFilesystemBackendType, 
-  AsyncFilesystemBackendOptions, 
-  AsyncFilesystemConfig 
-} from './promises/async-filesystem-unit';
+export type {
+  SyncFilesystemBackendType,
+  SyncFilesystemBackendOptions,
+  SyncFilesystemConfig,
+} from "./filesystem-unit";
+export type {
+  AsyncFilesystemBackendType,
+  AsyncFilesystemBackendOptions,
+  AsyncFilesystemConfig,
+} from "./promises/async-filesystem-unit";
 
 /**
  * Legacy compatibility - will be deprecated

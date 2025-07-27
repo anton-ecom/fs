@@ -1,11 +1,10 @@
 import { fs as memfs } from "memfs";
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * In-memory file system implementation using memfs
  */
 export class MemFileSystem implements IAsyncFileSystem {
-
   async exists(path: string): Promise<boolean> {
     return new Promise((resolve) => {
       try {
@@ -26,12 +25,12 @@ export class MemFileSystem implements IAsyncFileSystem {
     }
   }
 
-
   async writeFile(path: string, data: string): Promise<void> {
     try {
       // Ensure the directory exists before writing (handle both absolute and relative paths)
       const lastSlashIndex = path.lastIndexOf("/");
-      if (lastSlashIndex > 0) { // Only create directory if there's a meaningful parent directory
+      if (lastSlashIndex > 0) {
+        // Only create directory if there's a meaningful parent directory
         const dirPath = path.substring(0, lastSlashIndex);
         if (!(await this.exists(dirPath))) {
           await this.ensureDir(dirPath);
@@ -44,7 +43,6 @@ export class MemFileSystem implements IAsyncFileSystem {
     }
   }
 
-  
   async deleteFile(path: string): Promise<void> {
     try {
       await memfs.promises.unlink(path);
@@ -63,7 +61,7 @@ export class MemFileSystem implements IAsyncFileSystem {
       }
     }
   }
-  
+
   async ensureDir(path: string): Promise<void> {
     try {
       await memfs.promises.mkdir(path, { recursive: true });
@@ -75,7 +73,6 @@ export class MemFileSystem implements IAsyncFileSystem {
     }
   }
 
- 
   async chmod(path: string, mode: number): Promise<void> {
     try {
       await memfs.promises.chmod(path, mode);
@@ -93,7 +90,7 @@ export class MemFileSystem implements IAsyncFileSystem {
       throw new Error(`Failed to read directory ${dirPath}: ${error}`);
     }
   }
- 
+
   // Additional utility methods for testing
 
   async clear(dirPath: string): Promise<void> {
@@ -106,7 +103,7 @@ export class MemFileSystem implements IAsyncFileSystem {
     }
   }
 
-    async stat(path: string): Promise<FileStats> {
+  async stat(path: string): Promise<FileStats> {
     const stats = await memfs.promises.stat(path);
 
     return {

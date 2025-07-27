@@ -5,21 +5,37 @@
  * No async/sync mixing, no runtime type checks, no zalgo.
  */
 
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
-import { Unit, UnitSchema, createUnitSchema, type TeachingContract, type UnitProps } from '@synet/unit';
+import {
+  type TeachingContract,
+  Unit,
+  type UnitProps,
+  UnitSchema,
+  createUnitSchema,
+} from "@synet/unit";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
+import {
+  AzureBlobStorageFileSystem,
+  type AzureBlobStorageOptions,
+} from "./azure";
+import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
 import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
 import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
-import { S3FileSystem, type S3FileSystemOptions } from "./s3";
-import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
-import { AzureBlobStorageFileSystem, type AzureBlobStorageOptions } from "./azure";
 import { CloudflareR2FileSystem, type CloudflareR2Options } from "./r2";
+import { S3FileSystem, type S3FileSystemOptions } from "./s3";
 
 /**
  * Supported async filesystem backend types
  */
-export type AsyncFilesystemBackendType = "node" | "memory" | "github" | "s3" | "gcs" | "azure" | "r2";
+export type AsyncFilesystemBackendType =
+  | "node"
+  | "memory"
+  | "github"
+  | "s3"
+  | "gcs"
+  | "azure"
+  | "r2";
 
 /**
  * Options for different async filesystem backends
@@ -60,8 +76,10 @@ interface AsyncFileSystemProps extends UnitProps {
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations
  */
-export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyncFileSystem {
-
+export class AsyncFileSystem
+  extends Unit<AsyncFileSystemProps>
+  implements IAsyncFileSystem
+{
   protected constructor(props: AsyncFileSystemProps) {
     super(props);
   }
@@ -76,8 +94,8 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
 
     const props: AsyncFileSystemProps = {
       dna: createUnitSchema({
-        id: 'fs-async',
-        version: '1.0.0'
+        id: "fs-async",
+        version: "1.0.0",
       }),
       backend,
       config,
@@ -86,12 +104,11 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
         writes: 0,
         errors: 0,
       },
-      created: new Date()
+      created: new Date(),
     };
 
     return new AsyncFileSystem(props);
   }
-
 
   /**
    * Normalize path for backend compatibility
@@ -99,10 +116,10 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
    */
   private normalizePath(path: string): string {
     // Memory backend requires absolute paths
-    if (this.props.config.type === 'memory') {
-      return path.startsWith('/') ? path : `/${path}`;
+    if (this.props.config.type === "memory") {
+      return path.startsWith("/") ? path : `/${path}`;
     }
-    
+
     // Node, S3, GitHub handle paths natively
     return path;
   }
@@ -115,30 +132,24 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
    * Read file content asynchronously
    */
   async readFile(path: string): Promise<string> {
-
-      const normalizedPath = this.normalizePath(path);
-      return await this.props.backend.readFile(normalizedPath);
-
+    const normalizedPath = this.normalizePath(path);
+    return await this.props.backend.readFile(normalizedPath);
   }
 
   /**
    * Write file content asynchronously
    */
   async writeFile(path: string, data: string): Promise<void> {
-    
-      const normalizedPath = this.normalizePath(path);
-      await this.props.backend.writeFile(normalizedPath, data);
-
+    const normalizedPath = this.normalizePath(path);
+    await this.props.backend.writeFile(normalizedPath, data);
   }
 
   /**
    * Check if file/directory exists asynchronously
    */
   async exists(path: string): Promise<boolean> {
-
-      const normalizedPath = this.normalizePath(path);
-      return await this.props.backend.exists(normalizedPath);
- 
+    const normalizedPath = this.normalizePath(path);
+    return await this.props.backend.exists(normalizedPath);
   }
 
   /**
@@ -158,67 +169,59 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
    * Read directory contents asynchronously
    */
   async readDir(path: string): Promise<string[]> {
- 
-      const normalizedPath = this.normalizePath(path);
-      return await this.props.backend.readDir(normalizedPath);
- 
+    const normalizedPath = this.normalizePath(path);
+    return await this.props.backend.readDir(normalizedPath);
   }
 
   /**
    * Ensure directory exists asynchronously
    */
   async ensureDir(path: string): Promise<void> {
-  
-      const normalizedPath = this.normalizePath(path);
-      await this.props.backend.ensureDir(normalizedPath);
-
+    const normalizedPath = this.normalizePath(path);
+    await this.props.backend.ensureDir(normalizedPath);
   }
 
   /**
    * Delete directory asynchronously
    */
   async deleteDir(path: string): Promise<void> {
-   
-      const normalizedPath = this.normalizePath(path);
-      await this.props.backend.deleteDir(normalizedPath);
- 
+    const normalizedPath = this.normalizePath(path);
+    await this.props.backend.deleteDir(normalizedPath);
   }
 
   /**
    * Set file permissions asynchronously
    */
   async chmod(path: string, mode: number): Promise<void> {
-  
-      const normalizedPath = this.normalizePath(path);
-      await this.props.backend.chmod(normalizedPath, mode);
- 
+    const normalizedPath = this.normalizePath(path);
+    await this.props.backend.chmod(normalizedPath, mode);
   }
 
   /**
    * Get file statistics asynchronously
    */
   async stat(path: string): Promise<FileStats> {
-    
-      const normalizedPath = this.normalizePath(path);
-      const result = await this.props.backend.stat?.(normalizedPath);
-      if (!result) {
-        throw new Error(`stat method not available on ${this.props.config.type} backend`);
-      }
-      return result;
-  
+    const normalizedPath = this.normalizePath(path);
+    const result = await this.props.backend.stat?.(normalizedPath);
+    if (!result) {
+      throw new Error(
+        `stat method not available on ${this.props.config.type} backend`,
+      );
+    }
+    return result;
   }
 
   /**
    * Clear directory contents asynchronously
    */
   async clear(dirPath: string): Promise<void> {
-   
-      if (!this.props.backend.clear) {
-        throw new Error(`clear method not available on ${this.props.config.type} backend`);
-      }
-      const normalizedPath = this.normalizePath(dirPath);
-      await this.props.backend.clear(normalizedPath);
-   
+    if (!this.props.backend.clear) {
+      throw new Error(
+        `clear method not available on ${this.props.config.type} backend`,
+      );
+    }
+    const normalizedPath = this.normalizePath(dirPath);
+    await this.props.backend.clear(normalizedPath);
   }
 
   // ==========================================
@@ -233,15 +236,17 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
       unitId: this.props.dna.id,
       capabilities: {
         readFile: (...args: unknown[]) => this.readFile(args[0] as string),
-        writeFile: (...args: unknown[]) => this.writeFile(args[0] as string, args[1] as string),
+        writeFile: (...args: unknown[]) =>
+          this.writeFile(args[0] as string, args[1] as string),
         exists: (...args: unknown[]) => this.exists(args[0] as string),
         deleteFile: (...args: unknown[]) => this.deleteFile(args[0] as string),
         readDir: (...args: unknown[]) => this.readDir(args[0] as string),
         ensureDir: (...args: unknown[]) => this.ensureDir(args[0] as string),
         deleteDir: (...args: unknown[]) => this.deleteDir(args[0] as string),
-        chmod: (...args: unknown[]) => this.chmod(args[0] as string, args[1] as number),
-        stat: (...args: unknown[]) => this.stat(args[0] as string)
-      }
+        chmod: (...args: unknown[]) =>
+          this.chmod(args[0] as string, args[1] as number),
+        stat: (...args: unknown[]) => this.stat(args[0] as string),
+      },
     };
   }
 
@@ -250,7 +255,17 @@ export class AsyncFileSystem extends Unit<AsyncFileSystemProps> implements IAsyn
   }
 
   capabilities(): string[] {
-    return ['readFile', 'writeFile', 'exists', 'deleteFile', 'readDir', 'ensureDir', 'deleteDir', 'chmod', 'stat'];
+    return [
+      "readFile",
+      "writeFile",
+      "exists",
+      "deleteFile",
+      "readDir",
+      "ensureDir",
+      "deleteDir",
+      "chmod",
+      "stat",
+    ];
   }
 
   help(): void {
@@ -335,7 +350,8 @@ When learned by other units:
         return new MemFileSystem();
 
       case "github": {
-        const githubOptions = options as AsyncFilesystemBackendOptions["github"];
+        const githubOptions =
+          options as AsyncFilesystemBackendOptions["github"];
         if (!githubOptions) {
           throw new Error("GitHub filesystem requires options");
         }
@@ -396,7 +412,7 @@ When learned by other units:
       errorRate:
         this.props.operations.errors /
           (this.props.operations.reads + this.props.operations.writes) || 0,
-    }      
+    };
   }
 
   getErrorPatterns() {
@@ -420,5 +436,4 @@ When learned by other units:
           : "System performing well",
     };
   }
-
 }

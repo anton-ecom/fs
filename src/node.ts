@@ -1,11 +1,9 @@
-
 import fs from "node:fs";
-import type { IFileSystem, FileStats } from "./filesystem.interface";
+import type { FileStats, IFileSystem } from "./filesystem.interface";
 /**
  * Node.js implementation of FileSystem interface
  */
 export class NodeFileSystem implements IFileSystem {
-
   existsSync(path: string): boolean {
     return fs.existsSync(path);
   }
@@ -15,19 +13,16 @@ export class NodeFileSystem implements IFileSystem {
   }
 
   writeFileSync(path: string, data: string): void {
-    
-     try { 
-      
+    try {
       fs.writeFileSync(path, data);
-
-     }  catch (error: unknown) {
+    } catch (error: unknown) {
       if (
         error instanceof Error &&
         "code" in error &&
         (error as NodeJS.ErrnoException).code !== "EEXIST"
       ) {
         throw error;
-      } 
+      }
     }
   }
   deleteFileSync(path: string): void {
@@ -41,7 +36,6 @@ export class NodeFileSystem implements IFileSystem {
       fs.rmSync(path, { recursive: true });
     }
   }
-  
 
   ensureDirSync(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
@@ -61,7 +55,6 @@ export class NodeFileSystem implements IFileSystem {
     }
   }
 
-
   statSync(path: string): FileStats {
     const stats = fs.statSync(path);
 
@@ -76,5 +69,4 @@ export class NodeFileSystem implements IFileSystem {
       mode: stats.mode,
     };
   }
-
 }

@@ -6,8 +6,14 @@
  * Cloud storage (GitHub, S3, GCS) should use the async filesystem unit.
  */
 
+import {
+  type TeachingContract,
+  Unit,
+  type UnitProps,
+  UnitSchema,
+  createUnitSchema,
+} from "@synet/unit";
 import type { IFileSystem } from "./filesystem.interface";
-import { Unit, UnitSchema, createUnitSchema, type TeachingContract, type UnitProps } from '@synet/unit';
 
 import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
@@ -59,8 +65,10 @@ interface SyncFileSystemProps extends UnitProps {
 /**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
-export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem {
-
+export class FileSystem
+  extends Unit<SyncFileSystemProps>
+  implements IFileSystem
+{
   protected constructor(props: SyncFileSystemProps) {
     super(props);
   }
@@ -75,8 +83,8 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
 
     const props: SyncFileSystemProps = {
       dna: createUnitSchema({
-        id: 'fs',
-        version: '1.0.0'
+        id: "fs",
+        version: "1.0.0",
       }),
       backend,
       config,
@@ -85,7 +93,7 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
         writes: 0,
         errors: 0,
       },
-      created: new Date()
+      created: new Date(),
     };
 
     return new FileSystem(props);
@@ -99,7 +107,6 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Read file content synchronously
    */
   readFileSync(path: string): string {
-
     const normalizedPath = this.normalizePath(path);
     return this.props.backend.readFileSync(normalizedPath);
   }
@@ -154,10 +161,8 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Ensure directory exists synchronously
    */
   ensureDirSync(path: string): void {
-  
-      const normalizedPath = this.normalizePath(path);
-      this.props.backend.ensureDirSync(normalizedPath);
-  
+    const normalizedPath = this.normalizePath(path);
+    this.props.backend.ensureDirSync(normalizedPath);
   }
 
   /**
@@ -177,35 +182,35 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
    * Set file permissions synchronously
    */
   chmodSync(path: string, mode: number): void {
-      const normalizedPath = this.normalizePath(path);
-      this.props.backend.chmodSync(normalizedPath, mode);
+    const normalizedPath = this.normalizePath(path);
+    this.props.backend.chmodSync(normalizedPath, mode);
   }
 
   /**
    * Get file statistics synchronously
    */
   statSync(path: string): import("./filesystem.interface").FileStats {
-  
-      const normalizedPath = this.normalizePath(path);
-      const result = this.props.backend.statSync?.(normalizedPath);
-      if (!result) {
-        throw new Error(`statSync method not available on ${this.props.config.type} backend`);
-      }
-      return result;
-  
+    const normalizedPath = this.normalizePath(path);
+    const result = this.props.backend.statSync?.(normalizedPath);
+    if (!result) {
+      throw new Error(
+        `statSync method not available on ${this.props.config.type} backend`,
+      );
+    }
+    return result;
   }
 
   /**
    * Clear directory contents synchronously
    */
   clear(dirPath: string): void {
-
-      const normalizedPath = this.normalizePath(dirPath);
-      if (!this.props.backend.clear) {
-        throw new Error(`clear method not available on ${this.props.config.type} backend`);
-      }
-      this.props.backend.clear(normalizedPath);
-
+    const normalizedPath = this.normalizePath(dirPath);
+    if (!this.props.backend.clear) {
+      throw new Error(
+        `clear method not available on ${this.props.config.type} backend`,
+      );
+    }
+    this.props.backend.clear(normalizedPath);
   }
 
   // ==========================================
@@ -219,16 +224,23 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
     return {
       unitId: this.props.dna.id,
       capabilities: {
-        readFileSync: (...args: unknown[]) => this.readFileSync(args[0] as string),
-        writeFileSync: (...args: unknown[]) => this.writeFileSync(args[0] as string, args[1] as string),
+        readFileSync: (...args: unknown[]) =>
+          this.readFileSync(args[0] as string),
+        writeFileSync: (...args: unknown[]) =>
+          this.writeFileSync(args[0] as string, args[1] as string),
         existsSync: (...args: unknown[]) => this.existsSync(args[0] as string),
-        deleteFileSync: (...args: unknown[]) => this.deleteFileSync(args[0] as string),
-        readDirSync: (...args: unknown[]) => this.readDirSync(args[0] as string),
-        ensureDirSync: (...args: unknown[]) => this.ensureDirSync(args[0] as string),
-        deleteDirSync: (...args: unknown[]) => this.deleteDirSync(args[0] as string),
-        chmodSync: (...args: unknown[]) => this.chmodSync(args[0] as string, args[1] as number),
-        statSync: (...args: unknown[]) => this.statSync(args[0] as string)
-      }
+        deleteFileSync: (...args: unknown[]) =>
+          this.deleteFileSync(args[0] as string),
+        readDirSync: (...args: unknown[]) =>
+          this.readDirSync(args[0] as string),
+        ensureDirSync: (...args: unknown[]) =>
+          this.ensureDirSync(args[0] as string),
+        deleteDirSync: (...args: unknown[]) =>
+          this.deleteDirSync(args[0] as string),
+        chmodSync: (...args: unknown[]) =>
+          this.chmodSync(args[0] as string, args[1] as number),
+        statSync: (...args: unknown[]) => this.statSync(args[0] as string),
+      },
     };
   }
 
@@ -237,7 +249,17 @@ export class FileSystem extends Unit<SyncFileSystemProps> implements IFileSystem
   }
 
   capabilities(): string[] {
-    return ['readFileSync', 'writeFileSync', 'existsSync', 'deleteFileSync', 'readDirSync', 'ensureDirSync', 'deleteDirSync', 'chmodSync', 'statSync'];
+    return [
+      "readFileSync",
+      "writeFileSync",
+      "existsSync",
+      "deleteFileSync",
+      "readDirSync",
+      "ensureDirSync",
+      "deleteDirSync",
+      "chmodSync",
+      "statSync",
+    ];
   }
 
   help(): void {
@@ -330,56 +352,54 @@ When learned by other units:
     return false; // This unit is always sync
   }
 
-   
   getUsagePattern() {
-        return {
-        reads: this.props.operations.reads,
-        backendType: this.props.config.type,
-        totalOperations:
-          this.props.operations.reads + this.props.operations.writes,
-        readWriteRatio:
-          this.props.operations.writes > 0
-            ? this.props.operations.reads / this.props.operations.writes
-            : this.props.operations.reads,
-        errorRate:
-          this.props.operations.errors /
-            (this.props.operations.reads + this.props.operations.writes) || 0,
-        }      
-    }
+    return {
+      reads: this.props.operations.reads,
+      backendType: this.props.config.type,
+      totalOperations:
+        this.props.operations.reads + this.props.operations.writes,
+      readWriteRatio:
+        this.props.operations.writes > 0
+          ? this.props.operations.reads / this.props.operations.writes
+          : this.props.operations.reads,
+      errorRate:
+        this.props.operations.errors /
+          (this.props.operations.reads + this.props.operations.writes) || 0,
+    };
+  }
 
-    getErrorPatterns() {
-      return {
-        totalErrors: this.props.operations.errors,
-        suggestion:
-          this.props.operations.errors > 10
-            ? `Consider switching from ${this.props.config.type} backend`
-            : "System running smoothly",
-        backendType: this.props.config.type,
-      };
-    }
+  getErrorPatterns() {
+    return {
+      totalErrors: this.props.operations.errors,
+      suggestion:
+        this.props.operations.errors > 10
+          ? `Consider switching from ${this.props.config.type} backend`
+          : "System running smoothly",
+      backendType: this.props.config.type,
+    };
+  }
 
-      getPerformanceInsights() {
-        return {
-          backendType: this.props.config.type,
-          isAsync: this.isAsync(),
-          recommendation:
-            this.props.operations.reads + this.props.operations.writes > 1000
-              ? "Consider optimizing your filesystem usage"
-              : "System performing well",
-      };
-    }
+  getPerformanceInsights() {
+    return {
+      backendType: this.props.config.type,
+      isAsync: this.isAsync(),
+      recommendation:
+        this.props.operations.reads + this.props.operations.writes > 1000
+          ? "Consider optimizing your filesystem usage"
+          : "System performing well",
+    };
+  }
 
   /**
    * Normalize path for backend compatibility
    */
   private normalizePath(path: string): string {
     // Memory backend requires absolute paths
-    if (this.props.config.type === 'memory') {
-      return path.startsWith('/') ? path : `/${path}`;
+    if (this.props.config.type === "memory") {
+      return path.startsWith("/") ? path : `/${path}`;
     }
-    
+
     // Node backend handles paths natively
     return path;
   }
-
 }

@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.6   
+version: v.1.0.7  
 description: Files are artefacts of identity
 ```
 
@@ -48,8 +48,16 @@ This pattern provides a consistent filesystem abstraction that enables dependenc
 - **AnalyticsFileSystem** - Filesystem analytics and usage tracking with configurable event emission
 - **WithIdFileSystem** - Smart file storage with deterministic IDs and human-readable aliases
 - **CachedFileSystem** - Lightning-fast file operations with intelligent LRU caching and TTL expiration
+
+
+## Cloud Storage Integrations
+
 - **GitHubFileSystem** - Version-controlled file storage using GitHub repositories with automatic commit and sync
 - **S3FileSystem** - AWS S3 cloud storage with local filesystem interface and intelligent caching
+- **AzureBlobFileSystem** - Microsoft Azure Blob Storage with local filesystem interface and intelligent caching
+- **GoogleCloudFileSystem** - Google Cloud Storage with seamless file operations and automatic authentication
+- **DigitalOceanSpacesFileSystem** - DigitalOcean Spaces (S3-compatible) storage with global CDN integration
+- **CloudflareR2FileSystem** - Cloudflare R2 storage with zero egress fees and global edge distribution
 
 ## Coming soon:
 
@@ -251,7 +259,7 @@ const content = syncUnit.readFile('./file.txt'); // Returns string directly
 ```typescript
 import { AsyncFileSystem } from '@synet/fs';
 
-const asyncUnit = AsyncFileSystem.create({ type: "s3", options: s3Config });
+const asyncUnit = AsyncFileSystem.create({ type: "azure", options: azureConfig });
 const content = await asyncUnit.readFile('./file.txt'); // Returns Promise<string>
 ```
 
@@ -265,16 +273,18 @@ export const FS = {
   sync: {
     memory: () => FileSystem.create({ type: "memory" }),
     node: () => FileSystem.create({ type: "node" }),
-    github: (options) => FileSystem.create({ type: "github", options }),
-    s3: (options) => FileSystem.create({ type: "s3", options }),
   },
   
   // Asynchronous operations  
   async: {
-    memory: () => AsyncFileSystem.create({ type: "memory" }),
+    memory: () => AsyncFileSystem.create({ type: "memory" }),   
     node: () => AsyncFileSystem.create({ type: "node" }),
-    github: (options) => AsyncFileSystem.create({ type: "github", options }),
-    s3: (options) => AsyncFileSystem.create({ type: "s3", options }),
+    s3: () => AsyncFileSystem.create({ type: "s3" }),
+    github: () => AsyncFileSystem.create({ type: "github" }),
+    azure: (options) => AsyncFileSystem.create({ type: "azure", options }),
+    google: (options) => AsyncFileSystem.create({ type: "google", options }),
+    digitalocean: (options) => AsyncFileSystem.create({ type: "digitalocean", options }),
+    r2: (options) => AsyncFileSystem.create({ type: "r2", options }),
   },
   
   // Quick presets for common scenarios
@@ -283,8 +293,7 @@ export const FS = {
     developmentAsync: () => FS.async.memory(),
     local: () => FS.sync.node(),
     localAsync: () => FS.async.node(),
-    production: (s3Options) => FS.async.s3(s3Options),
-    git: (githubOptions) => FS.async.github(githubOptions),
+    production: (cloudOptions) => FS.async.azure(cloudOptions), // or google, digitalocean, r2
   }
 };
 ```
@@ -660,6 +669,106 @@ const cachedContent = await asyncS3fs.readFile('data.json'); // No S3 call
 - **Prefix support**: Namespace files with bucket prefixes
 - **Error handling**: Graceful handling of S3 errors and edge cases
 - **S3-compatible**: Works with AWS S3 and compatible services (MinIO, DigitalOcean Spaces)
+
+### AzureBlobFileSystem (Async)
+
+**Microsoft Azure Blob Storage with local filesystem interface and intelligent caching**
+
+Seamlessly integrate Azure Blob Storage into your application with the familiar filesystem API. Perfect for Azure-native applications that need scalable cloud storage without complexity.
+
+```typescript
+import { createAzureBlobFileSystem } from '@synet/fs/promises';
+
+const azureFS = createAzureBlobFileSystem({
+  accountName: 'mystorageaccount',
+  accountKey: process.env.AZURE_STORAGE_KEY,
+  containerName: 'mycontainer',
+  prefix: 'app-data/' // Optional: namespace all files
+});
+
+// Use like any filesystem
+await azureFS.writeFile('config.json', JSON.stringify(config));
+const data = await azureFS.readFile('config.json');
+const files = await azureFS.readDir('uploads/');
+```
+
+**Key Features**: SAS token support, container management, metadata handling, CDN integration, geo-replication support.
+
+### GoogleCloudFileSystem (Async)
+
+**Google Cloud Storage with seamless file operations and automatic authentication**
+
+Store files in Google Cloud Storage with automatic authentication and intelligent caching. Ideal for GCP-native applications.
+
+```typescript
+import { createGoogleCloudFileSystem } from '@synet/fs/promises';
+
+const gcsFS = createGoogleCloudFileSystem({
+  projectId: 'my-gcp-project',
+  bucketName: 'my-storage-bucket',
+  keyFilename: './path/to/service-account.json', // Optional
+  prefix: 'app-files/' // Optional: namespace all files
+});
+
+// Standard filesystem operations
+await gcsFS.writeFile('documents/report.pdf', pdfBuffer);
+const exists = await gcsFS.exists('documents/report.pdf');
+const stats = await gcsFS.stat('documents/report.pdf');
+```
+
+**Key Features**: Service account authentication, IAM integration, lifecycle management, versioning support, global CDN.
+
+### DigitalOceanSpacesFileSystem (Async)
+
+**DigitalOcean Spaces (S3-compatible) storage with global CDN integration**
+
+Leverage DigitalOcean Spaces for cost-effective object storage with built-in CDN and S3 compatibility.
+
+```typescript
+import { createDigitalOceanSpacesFileSystem } from '@synet/fs/promises';
+
+const doFS = createDigitalOceanSpacesFileSystem({
+  endpoint: 'https://sgp1.digitaloceanspaces.com',
+  accessKeyId: process.env.DO_SPACES_KEY,
+  secretAccessKey: process.env.DO_SPACES_SECRET,
+  bucket: 'my-space',
+  region: 'sgp1',
+  prefix: 'app-storage/' // Optional
+});
+
+// S3-compatible operations with DO Spaces benefits
+await doFS.writeFile('static/image.jpg', imageBuffer);
+const url = doFS.getPublicUrl('static/image.jpg'); // CDN URL
+const files = await doFS.readDir('static/');
+```
+
+**Key Features**: Global CDN integration, S3-compatible API, cost-effective pricing, multiple region support.
+
+### CloudflareR2FileSystem (Async)
+
+**Cloudflare R2 storage with zero egress fees and global edge distribution**
+
+Store files in Cloudflare R2 with zero egress costs and global edge performance, perfect for high-traffic applications.
+
+```typescript
+import { createCloudflareR2FileSystem } from '@synet/fs/promises';
+
+const r2FS = createCloudflareR2FileSystem({
+  accountId: 'your-cloudflare-account-id',
+  accessKeyId: process.env.R2_ACCESS_KEY_ID,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  bucket: 'my-r2-bucket',
+  region: 'auto',
+  prefix: 'content/' // Optional
+});
+
+// Zero egress costs for file operations
+await r2FS.writeFile('assets/logo.png', logoBuffer);
+const content = await r2FS.readFile('assets/logo.png');
+const bucketInfo = r2FS.getBucketInfo(); // R2-specific info
+```
+
+**Key Features**: Zero egress fees, S3-compatible API, global edge performance, automatic scaling, integrated with Cloudflare Workers.
 
 ---
 

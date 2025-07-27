@@ -1,31 +1,38 @@
-import { EventEmitter, type Event } from '@synet/patterns';
+import { type Event, EventEmitter } from "@synet/patterns";
 import type { IAsyncFileSystem } from "./filesystem.interface";
 
 export enum FilesystemEventTypes {
-  EXISTS = 'file.exists',
-  READ = 'file.read',
-  WRITE = 'file.write',
-  DELETE = 'file.delete',
-  CHMOD = 'file.chmod',
-  ENSURE_DIR = 'file.ensureDir',
-  DELETE_DIR = 'file.deleteDir',
-  READ_DIR = 'file.readDir',
+  EXISTS = "file.exists",
+  READ = "file.read",
+  WRITE = "file.write",
+  DELETE = "file.delete",
+  CHMOD = "file.chmod",
+  ENSURE_DIR = "file.ensureDir",
+  DELETE_DIR = "file.deleteDir",
+  READ_DIR = "file.readDir",
 }
 
 export interface FilesystemEvent extends Event {
   type: FilesystemEventTypes;
   data: {
     filePath: string;
-    operation: 'read' | 'write' | 'delete' | 'exists' | 'chmod' | 'ensureDir' | 'deleteDir' | 'readDir';
+    operation:
+      | "read"
+      | "write"
+      | "delete"
+      | "exists"
+      | "chmod"
+      | "ensureDir"
+      | "deleteDir"
+      | "readDir";
     result?: unknown;
     error?: Error;
   };
 }
 
 export class ObservableFileSystem implements IAsyncFileSystem {
-
   private eventEmitter: EventEmitter<FilesystemEvent>;
-  
+
   constructor(
     private baseFilesystem: IAsyncFileSystem,
     private events?: FilesystemEventTypes[],
@@ -36,7 +43,7 @@ export class ObservableFileSystem implements IAsyncFileSystem {
   getEventEmitter(): EventEmitter<FilesystemEvent> {
     return this.eventEmitter;
   }
-  
+
   private shouldEmit(eventType: FilesystemEventTypes): boolean {
     return !this.events || this.events.includes(eventType);
   }
@@ -44,18 +51,18 @@ export class ObservableFileSystem implements IAsyncFileSystem {
   async exists(filename: string): Promise<boolean> {
     try {
       const result = await this.baseFilesystem.exists(filename);
-      
+
       if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.EXISTS,
           data: {
             filePath: filename,
-            operation: 'exists',
-            result
-          }
+            operation: "exists",
+            result,
+          },
         });
       }
-      
+
       return result;
     } catch (error) {
       if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
@@ -63,9 +70,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.EXISTS,
           data: {
             filePath: filename,
-            operation: 'exists',
-            error: error as Error
-          }
+            operation: "exists",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -75,15 +82,15 @@ export class ObservableFileSystem implements IAsyncFileSystem {
   async readFile(filename: string): Promise<string> {
     try {
       const content = await this.baseFilesystem.readFile(filename);
-      
+
       if (this.shouldEmit(FilesystemEventTypes.READ)) {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: 'read',
-            result: content.length
-          }
+            operation: "read",
+            result: content.length,
+          },
         });
       }
 
@@ -94,9 +101,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: 'read',
-            error: error as Error
-          }
+            operation: "read",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -112,9 +119,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: 'write',
-            result: data.length
-          }
+            operation: "write",
+            result: data.length,
+          },
         });
       }
     } catch (error) {
@@ -123,9 +130,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: 'write',
-            error: error as Error
-          }
+            operation: "write",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -141,8 +148,8 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: 'delete'
-          }
+            operation: "delete",
+          },
         });
       }
     } catch (error) {
@@ -151,15 +158,15 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: 'delete',
-            error: error as Error
-          }
+            operation: "delete",
+            error: error as Error,
+          },
         });
       }
       throw error;
     }
   }
-  
+
   async deleteDir(dirPath: string): Promise<void> {
     try {
       await this.baseFilesystem.deleteDir(dirPath);
@@ -169,8 +176,8 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'deleteDir'
-          }
+            operation: "deleteDir",
+          },
         });
       }
     } catch (error) {
@@ -179,9 +186,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'deleteDir',
-            error: error as Error
-          }
+            operation: "deleteDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -197,8 +204,8 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'ensureDir'
-          }
+            operation: "ensureDir",
+          },
         });
       }
     } catch (error) {
@@ -207,9 +214,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'ensureDir',
-            error: error as Error
-          }
+            operation: "ensureDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -225,9 +232,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: 'readDir',
-            result: result.length
-          }
+            operation: "readDir",
+            result: result.length,
+          },
         });
       }
 
@@ -238,9 +245,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: 'readDir',
-            error: error as Error
-          }
+            operation: "readDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -256,9 +263,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: 'chmod',
-            result: mode
-          }
+            operation: "chmod",
+            result: mode,
+          },
         });
       }
     } catch (error) {
@@ -267,9 +274,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: 'chmod',
-            error: error as Error
-          }
+            operation: "chmod",
+            error: error as Error,
+          },
         });
       }
       throw error;

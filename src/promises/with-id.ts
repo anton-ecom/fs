@@ -1,19 +1,19 @@
-import crypto from 'node:crypto';
-import path from 'node:path';
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import crypto from "node:crypto";
+import path from "node:path";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * Supported file formats for ID-based file operations
  */
 export enum FileFormat {
-  JSON = 'json',
-  TXT = 'txt',
-  PDF = 'pdf',
-  MD = 'md',
-  XML = 'xml',
-  CSV = 'csv',
-  LOG = 'log',
-  CONFIG = 'config'
+  JSON = "json",
+  TXT = "txt",
+  PDF = "pdf",
+  MD = "md",
+  XML = "xml",
+  CSV = "csv",
+  LOG = "log",
+  CONFIG = "config",
 }
 
 /**
@@ -43,7 +43,11 @@ export class WithIdFileSystem implements IAsyncFileSystem {
    * Generate deterministic ID for a file path
    */
   private generateId(filePath: string): string {
-    return crypto.createHash('sha256').update(filePath).digest('hex').substring(0, 16);
+    return crypto
+      .createHash("sha256")
+      .update(filePath)
+      .digest("hex")
+      .substring(0, 16);
   }
 
   /**
@@ -51,9 +55,9 @@ export class WithIdFileSystem implements IAsyncFileSystem {
    */
   private generateAlias(filePath: string): string {
     // Remove leading slash and convert path separators to hyphens
-    const normalized = filePath.replace(/^[./]+/, '').replace(/[/\\]/g, '-');
+    const normalized = filePath.replace(/^[./]+/, "").replace(/[/\\]/g, "-");
     // Remove extension
-    const withoutExt = normalized.replace(/\.[^.]*$/, '');
+    const withoutExt = normalized.replace(/\.[^.]*$/, "");
     return withoutExt;
   }
 
@@ -62,21 +66,30 @@ export class WithIdFileSystem implements IAsyncFileSystem {
    */
   private getFileFormat(filePath: string): FileFormat {
     const ext = path.extname(filePath).toLowerCase().substring(1);
-    
+
     // Map common extensions to FileFormat enum
     switch (ext) {
-      case 'json': return FileFormat.JSON;
-      case 'txt': return FileFormat.TXT;
-      case 'pdf': return FileFormat.PDF;
-      case 'md': 
-      case 'markdown': return FileFormat.MD;
-      case 'xml': return FileFormat.XML;
-      case 'csv': return FileFormat.CSV;
-      case 'log': return FileFormat.LOG;
-      case 'conf':
-      case 'config':
-      case 'ini': return FileFormat.CONFIG;
-      default: return FileFormat.TXT; // Default fallback
+      case "json":
+        return FileFormat.JSON;
+      case "txt":
+        return FileFormat.TXT;
+      case "pdf":
+        return FileFormat.PDF;
+      case "md":
+      case "markdown":
+        return FileFormat.MD;
+      case "xml":
+        return FileFormat.XML;
+      case "csv":
+        return FileFormat.CSV;
+      case "log":
+        return FileFormat.LOG;
+      case "conf":
+      case "config":
+      case "ini":
+        return FileFormat.CONFIG;
+      default:
+        return FileFormat.TXT; // Default fallback
     }
   }
 
@@ -84,17 +97,17 @@ export class WithIdFileSystem implements IAsyncFileSystem {
    * Generate stored file path with ID format
    */
   private generateStoredPath(filePath: string): string {
-    const normalizedPath = filePath.replace(/\\/g, '/');
+    const normalizedPath = filePath.replace(/\\/g, "/");
     const dir = path.dirname(normalizedPath);
     const ext = path.extname(normalizedPath);
     const basename = path.basename(normalizedPath, ext);
     const id = this.generateId(normalizedPath);
     const alias = this.generateAlias(normalizedPath);
-    
+
     const storedName = `${basename}:${alias}-${id}${ext}`;
-    
+
     // Preserve the original directory structure including leading ./
-    if (dir === '.') {
+    if (dir === ".") {
       return `./${storedName}`;
     }
     return `${dir}/${storedName}`;
@@ -104,8 +117,8 @@ export class WithIdFileSystem implements IAsyncFileSystem {
    * Get file metadata for a path, creating if necessary
    */
   private getOrCreateMetadata(filePath: string): FileMetadata {
-    const normalizedPath = filePath.replace(/\\/g, '/');
-    
+    const normalizedPath = filePath.replace(/\\/g, "/");
+
     const existing = this.fileMap.get(normalizedPath);
     if (existing) {
       return existing;
@@ -121,7 +134,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
       alias,
       originalPath: normalizedPath,
       storedPath,
-      format
+      format,
     };
 
     // Store in all maps
@@ -158,15 +171,20 @@ export class WithIdFileSystem implements IAsyncFileSystem {
   /**
    * Get file content by ID or alias with optional format specification
    */
-  async getByIdOrAlias(idOrAlias: string, expectedFormat?: FileFormat): Promise<string> {
+  async getByIdOrAlias(
+    idOrAlias: string,
+    expectedFormat?: FileFormat,
+  ): Promise<string> {
     const metadata = this.findMetadata(idOrAlias);
-    
+
     if (!metadata) {
       throw new Error(`File not found with ID or alias: ${idOrAlias}`);
     }
 
     if (expectedFormat && metadata.format !== expectedFormat) {
-      throw new Error(`File format mismatch. Expected: ${expectedFormat}, Found: ${metadata.format}`);
+      throw new Error(
+        `File format mismatch. Expected: ${expectedFormat}, Found: ${metadata.format}`,
+      );
     }
 
     return await this.baseFileSystem.readFile(metadata.storedPath);
@@ -189,26 +207,26 @@ export class WithIdFileSystem implements IAsyncFileSystem {
   // IAsyncFileSystem implementation
 
   async exists(path: string): Promise<boolean> {
-    const normalizedPath = path.replace(/\\/g, '/');
+    const normalizedPath = path.replace(/\\/g, "/");
     const existing = this.fileMap.get(normalizedPath);
-    
+
     if (existing) {
       // File is tracked, check if it exists in base filesystem
       return await this.baseFileSystem.exists(existing.storedPath);
     }
-    
+
     // File not tracked, check if we should track it
     // Generate the stored path and check if it exists
     const metadata = this.getOrCreateMetadata(normalizedPath);
     const exists = await this.baseFileSystem.exists(metadata.storedPath);
-    
+
     if (!exists) {
       // If file doesn't exist, clean up the metadata we just created
       this.fileMap.delete(metadata.originalPath);
       this.idMap.delete(metadata.id);
       this.aliasMap.delete(metadata.alias);
     }
-    
+
     return exists;
   }
 
@@ -225,7 +243,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
   async deleteFile(path: string): Promise<void> {
     const metadata = this.getOrCreateMetadata(path);
     await this.baseFileSystem.deleteFile(metadata.storedPath);
-    
+
     // Clean up metadata
     this.fileMap.delete(metadata.originalPath);
     this.idMap.delete(metadata.id);
@@ -234,7 +252,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
 
   async deleteDir(path: string): Promise<void> {
     // Clean up metadata for files in the directory
-    const normalizedPath = path.replace(/\\/g, '/');
+    const normalizedPath = path.replace(/\\/g, "/");
     for (const [filePath, metadata] of this.fileMap.entries()) {
       if (filePath.startsWith(normalizedPath)) {
         this.idMap.delete(metadata.id);
@@ -242,7 +260,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
         this.fileMap.delete(filePath);
       }
     }
-    
+
     await this.baseFileSystem.deleteDir(path);
   }
 
@@ -262,7 +280,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
   async clear?(dirPath: string): Promise<void> {
     if (this.baseFileSystem.clear) {
       // Clean up metadata for the directory
-      const normalizedPath = dirPath.replace(/\\/g, '/');
+      const normalizedPath = dirPath.replace(/\\/g, "/");
       for (const [filePath, metadata] of this.fileMap.entries()) {
         if (filePath.startsWith(normalizedPath)) {
           this.idMap.delete(metadata.id);
@@ -270,7 +288,7 @@ export class WithIdFileSystem implements IAsyncFileSystem {
           this.fileMap.delete(filePath);
         }
       }
-      
+
       await this.baseFileSystem.clear(dirPath);
     }
   }

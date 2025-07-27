@@ -1,5 +1,5 @@
-import { Octokit } from '@octokit/rest';
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import { Octokit } from "@octokit/rest";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 /**
  * GitHub filesystem configuration options
  */
@@ -31,7 +31,7 @@ interface FileCache {
 
 /**
  * Async GitHub-based filesystem implementation
- * 
+ *
  * Stores files in a GitHub repository with automatic version control.
  * Each write operation creates a commit, providing built-in versioning
  * and collaboration features.
@@ -43,15 +43,15 @@ export class GitHubFileSystem implements IAsyncFileSystem {
 
   constructor(options: GitHubFileSystemOptions) {
     this.options = {
-      branch: 'main',
-      authorName: 'GitHubFileSystem',
-      authorEmail: 'noreply@github.com',
+      branch: "main",
+      authorName: "GitHubFileSystem",
+      authorEmail: "noreply@github.com",
       autoCommit: true,
-      ...options
+      ...options,
     };
 
     this.octokit = new Octokit({
-      auth: this.options.token
+      auth: this.options.token,
     });
   }
 
@@ -71,22 +71,33 @@ export class GitHubFileSystem implements IAsyncFileSystem {
         owner: this.options.owner,
         repo: this.options.repo,
         path: this.normalizePath(path),
-        ref: this.options.branch
+        ref: this.options.branch,
       });
 
-      if (response && 'content' in response.data && typeof response.data.content === 'string') {
+      if (
+        response &&
+        "content" in response.data &&
+        typeof response.data.content === "string"
+      ) {
         // Cache the file
         this.cache.set(path, {
-          content: Buffer.from(response.data.content, 'base64').toString('utf8'),
+          content: Buffer.from(response.data.content, "base64").toString(
+            "utf8",
+          ),
           sha: response.data.sha,
-          path: this.normalizePath(path)
+          path: this.normalizePath(path),
         });
         return true;
       }
 
       return false;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 404
+      ) {
         return false;
       }
       throw new Error(`Failed to check file existence for ${path}: ${error}`);
@@ -110,25 +121,38 @@ export class GitHubFileSystem implements IAsyncFileSystem {
         owner: this.options.owner,
         repo: this.options.repo,
         path: this.normalizePath(path),
-        ref: this.options.branch
+        ref: this.options.branch,
       });
 
-      if (!response || !('content' in response.data) || typeof response.data.content !== 'string') {
-        throw new Error(`File ${path} is not a regular file or content is not available`);
+      if (
+        !response ||
+        !("content" in response.data) ||
+        typeof response.data.content !== "string"
+      ) {
+        throw new Error(
+          `File ${path} is not a regular file or content is not available`,
+        );
       }
 
-      const content = Buffer.from(response.data.content, 'base64').toString('utf8');
-      
+      const content = Buffer.from(response.data.content, "base64").toString(
+        "utf8",
+      );
+
       // Cache the file
       this.cache.set(path, {
         content,
         sha: response.data.sha,
-        path: this.normalizePath(path)
+        path: this.normalizePath(path),
       });
 
       return content;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 404
+      ) {
         throw new Error(`File not found: ${path}`);
       }
       throw new Error(`Failed to read file ${path}: ${error}`);
@@ -143,7 +167,7 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   async writeFile(path: string, data: string): Promise<void> {
     try {
       const normalizedPath = this.normalizePath(path);
-      
+
       // Get current file info if it exists
       const cached = this.cache.get(path);
       let sha: string | undefined = cached?.sha;
@@ -155,10 +179,10 @@ export class GitHubFileSystem implements IAsyncFileSystem {
             owner: this.options.owner,
             repo: this.options.repo,
             path: normalizedPath,
-            ref: this.options.branch
+            ref: this.options.branch,
           });
 
-          if (response && 'sha' in response.data) {
+          if (response && "sha" in response.data) {
             sha = response.data.sha;
           }
         } catch (error) {
@@ -168,39 +192,39 @@ export class GitHubFileSystem implements IAsyncFileSystem {
 
       if (this.options.autoCommit) {
         // Create or update file with commit
-        const response = await this.octokit.rest.repos.createOrUpdateFileContents({
-          owner: this.options.owner,
-          repo: this.options.repo,
-          path: normalizedPath,
-          message: `Update ${path}`,
-          content: Buffer.from(data).toString('base64'),
-          branch: this.options.branch,
-          sha: sha,
-          author: {
-            name: this.options.authorName,
-            email: this.options.authorEmail
-          },
-          committer: {
-            name: this.options.authorName,
-            email: this.options.authorEmail
-          }
-        });
+        const response =
+          await this.octokit.rest.repos.createOrUpdateFileContents({
+            owner: this.options.owner,
+            repo: this.options.repo,
+            path: normalizedPath,
+            message: `Update ${path}`,
+            content: Buffer.from(data).toString("base64"),
+            branch: this.options.branch,
+            sha: sha,
+            author: {
+              name: this.options.authorName,
+              email: this.options.authorEmail,
+            },
+            committer: {
+              name: this.options.authorName,
+              email: this.options.authorEmail,
+            },
+          });
 
         // Update cache with new SHA
         this.cache.set(path, {
           content: data,
-          sha: response.data.content?.sha || sha || '',
-          path: normalizedPath
+          sha: response.data.content?.sha || sha || "",
+          path: normalizedPath,
         });
       } else {
         // Just update cache
         this.cache.set(path, {
           content: data,
-          sha: sha || '',
-          path: normalizedPath
+          sha: sha || "",
+          path: normalizedPath,
         });
       }
-
     } catch (error: unknown) {
       throw new Error(`Failed to write file ${path}: ${error}`);
     }
@@ -213,7 +237,7 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   async deleteFile(path: string): Promise<void> {
     try {
       const normalizedPath = this.normalizePath(path);
-      
+
       // Get current file SHA
       let sha: string | undefined = this.cache.get(path)?.sha;
 
@@ -222,10 +246,10 @@ export class GitHubFileSystem implements IAsyncFileSystem {
           owner: this.options.owner,
           repo: this.options.repo,
           path: normalizedPath,
-          ref: this.options.branch
+          ref: this.options.branch,
         });
 
-        if (!response || !('sha' in response.data)) {
+        if (!response || !("sha" in response.data)) {
           throw new Error(`File ${path} not found or cannot be deleted`);
         }
 
@@ -242,19 +266,23 @@ export class GitHubFileSystem implements IAsyncFileSystem {
         branch: this.options.branch,
         author: {
           name: this.options.authorName,
-          email: this.options.authorEmail
+          email: this.options.authorEmail,
         },
         committer: {
           name: this.options.authorName,
-          email: this.options.authorEmail
-        }
+          email: this.options.authorEmail,
+        },
       });
 
       // Remove from cache
       this.cache.delete(path);
-
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 404
+      ) {
         // File already doesn't exist, that's fine
         return;
       }
@@ -267,7 +295,9 @@ export class GitHubFileSystem implements IAsyncFileSystem {
    * @param path Directory path
    */
   async deleteDir(path: string): Promise<void> {
-    throw new Error('GitHub filesystem does not support directory deletion. Delete individual files instead.');
+    throw new Error(
+      "GitHub filesystem does not support directory deletion. Delete individual files instead.",
+    );
   }
 
   /**
@@ -286,12 +316,12 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   async readDir(dirPath: string): Promise<string[]> {
     try {
       const normalizedPath = this.normalizePath(dirPath);
-      
+
       const response = await this.octokit.rest.repos.getContent({
         owner: this.options.owner,
         repo: this.options.repo,
         path: normalizedPath,
-        ref: this.options.branch
+        ref: this.options.branch,
       });
 
       if (!response || !Array.isArray(response.data)) {
@@ -299,11 +329,15 @@ export class GitHubFileSystem implements IAsyncFileSystem {
       }
 
       return response.data
-        .filter(item => item.type === 'file')
-        .map(item => item.name);
-
+        .filter((item) => item.type === "file")
+        .map((item) => item.name);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 404
+      ) {
         return [];
       }
       throw new Error(`Failed to read directory ${dirPath}: ${error}`);
@@ -327,7 +361,7 @@ export class GitHubFileSystem implements IAsyncFileSystem {
   async stat(path: string): Promise<FileStats> {
     try {
       const normalizedPath = this.normalizePath(path);
-      
+
       // Check cache first
       const cached = this.cache.get(path);
       if (cached) {
@@ -339,23 +373,28 @@ export class GitHubFileSystem implements IAsyncFileSystem {
         owner: this.options.owner,
         repo: this.options.repo,
         path: normalizedPath,
-        ref: this.options.branch
+        ref: this.options.branch,
       });
 
       const isDirectory = Array.isArray(response.data);
-      
+
       if (isDirectory) {
-        return this.createFileStats('', new Date(), true);
+        return this.createFileStats("", new Date(), true);
       }
 
-      if ('content' in response.data && typeof response.data.content === 'string') {
-        const content = Buffer.from(response.data.content, 'base64').toString('utf8');
-        
+      if (
+        "content" in response.data &&
+        typeof response.data.content === "string"
+      ) {
+        const content = Buffer.from(response.data.content, "base64").toString(
+          "utf8",
+        );
+
         // Cache the file
         this.cache.set(path, {
           content,
           sha: response.data.sha,
-          path: normalizedPath
+          path: normalizedPath,
         });
 
         // Try to get more accurate timestamp from commits
@@ -364,12 +403,13 @@ export class GitHubFileSystem implements IAsyncFileSystem {
             owner: this.options.owner,
             repo: this.options.repo,
             path: normalizedPath,
-            per_page: 1
+            per_page: 1,
           });
 
-          const lastModified = commits.data.length > 0 
-            ? new Date(commits.data[0].commit.committer?.date || new Date())
-            : new Date();
+          const lastModified =
+            commits.data.length > 0
+              ? new Date(commits.data[0].commit.committer?.date || new Date())
+              : new Date();
 
           return this.createFileStats(content, lastModified, false);
         } catch {
@@ -380,7 +420,12 @@ export class GitHubFileSystem implements IAsyncFileSystem {
 
       throw new Error(`Unable to get stats for ${path}`);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 404
+      ) {
         throw new Error(`File not found: ${path}`);
       }
       throw new Error(`Failed to get file stats for ${path}: ${error}`);
@@ -401,33 +446,38 @@ export class GitHubFileSystem implements IAsyncFileSystem {
     return {
       owner: this.options.owner,
       repo: this.options.repo,
-      branch: this.options.branch
+      branch: this.options.branch,
     };
   }
 
   /**
    * Get commit history for a file
    */
-  async getFileHistory(path: string, options?: { perPage?: number; page?: number }): Promise<Array<{
-    sha: string;
-    message: string;
-    author: string;
-    date: string;
-  }>> {
+  async getFileHistory(
+    path: string,
+    options?: { perPage?: number; page?: number },
+  ): Promise<
+    Array<{
+      sha: string;
+      message: string;
+      author: string;
+      date: string;
+    }>
+  > {
     try {
       const response = await this.octokit.rest.repos.listCommits({
         owner: this.options.owner,
         repo: this.options.repo,
         path: this.normalizePath(path),
         per_page: options?.perPage || 30,
-        page: options?.page || 1
+        page: options?.page || 1,
       });
 
-      return response.data.map(commit => ({
+      return response.data.map((commit) => ({
         sha: commit.sha,
         message: commit.commit.message,
-        author: commit.commit.author?.name || 'Unknown',
-        date: commit.commit.author?.date || ''
+        author: commit.commit.author?.name || "Unknown",
+        date: commit.commit.author?.date || "",
       }));
     } catch (error: unknown) {
       throw new Error(`Failed to get file history for ${path}: ${error}`);
@@ -446,14 +496,14 @@ export class GitHubFileSystem implements IAsyncFileSystem {
       // Get repository info
       const repoResponse = await this.octokit.rest.repos.get({
         owner: this.options.owner,
-        repo: this.options.repo
+        repo: this.options.repo,
       });
 
       // Get commits
       const commitsResponse = await this.octokit.rest.repos.listCommits({
         owner: this.options.owner,
         repo: this.options.repo,
-        per_page: 1
+        per_page: 1,
       });
 
       // Get tree to count files
@@ -461,16 +511,18 @@ export class GitHubFileSystem implements IAsyncFileSystem {
         owner: this.options.owner,
         repo: this.options.repo,
         tree_sha: this.options.branch,
-        recursive: 'true'
+        recursive: "true",
       });
 
-      const totalFiles = treeResponse.data.tree.filter(item => item.type === 'blob').length;
-      const lastCommit = commitsResponse.data[0]?.commit.message || '';
+      const totalFiles = treeResponse.data.tree.filter(
+        (item) => item.type === "blob",
+      ).length;
+      const lastCommit = commitsResponse.data[0]?.commit.message || "";
 
       return {
         totalFiles,
         totalCommits: repoResponse.data.size || 0,
-        lastCommit
+        lastCommit,
       };
     } catch (error: unknown) {
       throw new Error(`Failed to get repository stats: ${error}`);
@@ -483,7 +535,7 @@ export class GitHubFileSystem implements IAsyncFileSystem {
    */
   private normalizePath(path: string): string {
     // Remove leading slashes and normalize
-    return path.replace(/^\.?\/+/, '').replace(/\/+/g, '/');
+    return path.replace(/^\.?\/+/, "").replace(/\/+/g, "/");
   }
 
   /**
@@ -492,9 +544,13 @@ export class GitHubFileSystem implements IAsyncFileSystem {
    * @param lastModified Last modified date
    * @param isDirectory Is the file a directory
    */
-  private createFileStats(content: string, lastModified: Date, isDirectory: boolean): FileStats {
-    const size = Buffer.byteLength(content, 'utf8');
-    
+  private createFileStats(
+    content: string,
+    lastModified: Date,
+    isDirectory: boolean,
+  ): FileStats {
+    const size = Buffer.byteLength(content, "utf8");
+
     return {
       isFile: () => !isDirectory,
       isDirectory: () => isDirectory,
@@ -503,7 +559,7 @@ export class GitHubFileSystem implements IAsyncFileSystem {
       mtime: lastModified,
       ctime: lastModified, // Creation time same as modification for simplicity
       atime: lastModified, // Access time same as modification for simplicity
-      mode: 0o644 // Default file permissions
+      mode: 0o644, // Default file permissions
     };
   }
 }
@@ -512,6 +568,8 @@ export class GitHubFileSystem implements IAsyncFileSystem {
  * Create a new async GitHub filesystem instance
  * @param options GitHub filesystem configuration
  */
-export function createGitHubFileSystem(options: GitHubFileSystemOptions): GitHubFileSystem {
+export function createGitHubFileSystem(
+  options: GitHubFileSystemOptions,
+): GitHubFileSystem {
   return new GitHubFileSystem(options);
 }

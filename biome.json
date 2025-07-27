@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["**/guard.ts", "docs/**", "dist/**", "node_modules/**", "coverage/**", "test/**", "tests/**", "examples/**", "scripts/**"]
+		"ignore": [ "docs/**", "dist/**", "node_modules/**", "coverage/**", "test/**", "tests/**", "examples/**", "scripts/**","src/__tests__/**"]
 	
 	},
 	"formatter": {

@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { createCloudflareR2FileSystem, type CloudflareR2Options } from '../promises/r2';
+import { createCloudflareR2FileSystem, type CloudflareR2Options } from '../../src/promises/r2';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -20,15 +20,17 @@ describe('Cloudflare R2 Async FileSystem', () => {
     const testConfig = JSON.parse(fs.readFileSync(testConfigPath, 'utf8'));
 
     console.log('🔗 Initialized Cloudflare R2 for bucket:', testConfig.bucket);
+    console.log('🌍 Account ID:', testConfig.accountId);
+    console.log('🔗 Endpoint:', testConfig.s3ApiEndpoint);
     
     // Initialize R2 FileSystem with test credentials
-    // Note: R2 requires a valid Cloudflare account ID - using placeholder for structure
     const r2Options: CloudflareR2Options = {
-      accountId: testConfig.accountId || 'your-cloudflare-account-id', // Replace with real account ID
-      accessKeyId: testConfig.name,
-      secretAccessKey: testConfig.token,
+      accountId: testConfig.accountId,
+      accessKeyId: testConfig.accessKeyId,
+      secretAccessKey: testConfig.secretAccessKey,
       bucket: testConfig.bucket,
       region: 'auto',
+      endpoint: testConfig.s3ApiEndpoint,
       prefix: 'synet-fs-r2-test' // Use test prefix
     };
 

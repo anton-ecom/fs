@@ -1,5 +1,5 @@
 import * as fs from "node:fs/promises";
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * Node.js implementation of FileSystem interface
@@ -11,7 +11,6 @@ export class NodeFileSystem implements IAsyncFileSystem {
       .then(() => true)
       .catch(() => false);
   }
-
 
   async readFile(path: string): Promise<string> {
     return fs.readFile(path, "utf-8");
@@ -39,7 +38,6 @@ export class NodeFileSystem implements IAsyncFileSystem {
     }
   }
 
-  
   async ensureDir(dirPath: string): Promise<void> {
     try {
       await fs.mkdir(dirPath, { recursive: true });
@@ -57,14 +55,13 @@ export class NodeFileSystem implements IAsyncFileSystem {
     return fs.readdir(dirPath);
   }
 
-
   async chmod(path: string, mode: number): Promise<void> {
     return fs.chmod(path, mode);
   }
 
   async stat(path: string): Promise<FileStats> {
     const stats = await fs.stat(path);
-    
+
     return {
       isFile: () => stats.isFile(),
       isDirectory: () => stats.isDirectory(),
@@ -76,5 +73,4 @@ export class NodeFileSystem implements IAsyncFileSystem {
       mode: stats.mode,
     };
   }
-  
 }

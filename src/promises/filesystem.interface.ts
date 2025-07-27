@@ -62,10 +62,10 @@ export interface IAsyncFileSystem {
    */
   chmod(path: string, mode: number): Promise<void>;
 
-  /** 
-     * Get file statistics, custom type for flexibility
-     * @param path File path
-     */
+  /**
+   * Get file statistics, custom type for flexibility
+   * @param path File path
+   */
   stat?(path: string): Promise<FileStats>;
 
   /**

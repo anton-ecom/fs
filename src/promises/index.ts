@@ -1,21 +1,21 @@
 // @synet/fs/src/promises/index.ts
 
 // Asynchronous implementations
-export { IAsyncFileSystem } from '@synet/patterns/filesystem/promises';
-export { NodeFileSystem } from './node';
-export { MemFileSystem } from './memory';
-export { 
-  ObservableFileSystem, 
-  FilesystemEventTypes, 
-  type FilesystemEvent 
-} from './observable';
-export { 
+export { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+export { NodeFileSystem } from "./node";
+export { MemFileSystem } from "./memory";
+export {
+  ObservableFileSystem,
+  FilesystemEventTypes,
+  type FilesystemEvent,
+} from "./observable";
+export {
   JsonFileSystem,
   type JsonFileSystemOptions,
   JsonParseError,
   JsonStringifyError,
-  JsonValidationError
-} from './json';
+  JsonValidationError,
+} from "./json";
 export {
   AnalyticsFileSystem,
   createAnalyticsFileSystem,
@@ -23,20 +23,19 @@ export {
   type Stats,
   type FileAccess,
   type FileAction,
-  type AnalyticsStatsEvent
-} from './analytics';
+  type AnalyticsStatsEvent,
+} from "./analytics";
 export {
   WithIdFileSystem,
   FileFormat,
-  type FileMetadata
-} from './with-id';
+  type FileMetadata,
+} from "./with-id";
 export {
   CachedFileSystem,
   createCachedFileSystem,
-  type CachedFileSystemOptions
-} from './cached';
+  type CachedFileSystemOptions,
+} from "./cached";
 export {
   GitHubFileSystem,
-  type GitHubFileSystemOptions
-} from './github';
-
+  type GitHubFileSystemOptions,
+} from "./github";

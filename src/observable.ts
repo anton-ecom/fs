@@ -1,31 +1,39 @@
-import { EventEmitter, type Event } from '@synet/patterns';
-import type { IFileSystem, FileStats } from "./filesystem.interface";
+import { type Event, EventEmitter } from "@synet/patterns";
+import type { FileStats, IFileSystem } from "./filesystem.interface";
 export enum FilesystemEventTypes {
-  EXISTS = 'file.exists',
-  READ = 'file.read',
-  WRITE = 'file.write',
-  DELETE = 'file.delete',
-  CHMOD = 'file.chmod',
-  ENSURE_DIR = 'file.ensureDir',
-  DELETE_DIR = 'file.deleteDir',
-  READ_DIR = 'file.readDir',
-  STAT = 'file.stat',
+  EXISTS = "file.exists",
+  READ = "file.read",
+  WRITE = "file.write",
+  DELETE = "file.delete",
+  CHMOD = "file.chmod",
+  ENSURE_DIR = "file.ensureDir",
+  DELETE_DIR = "file.deleteDir",
+  READ_DIR = "file.readDir",
+  STAT = "file.stat",
 }
 
 export interface FilesystemEvent extends Event {
   type: FilesystemEventTypes;
   data: {
     filePath: string;
-    operation: 'read' | 'write' | 'delete' | 'exists' | 'chmod' | 'ensureDir' | 'deleteDir' | 'readDir' | 'stat';
+    operation:
+      | "read"
+      | "write"
+      | "delete"
+      | "exists"
+      | "chmod"
+      | "ensureDir"
+      | "deleteDir"
+      | "readDir"
+      | "stat";
     result?: unknown;
     error?: Error;
   };
 }
 
 export class ObservableFileSystem implements IFileSystem {
-  
   private eventEmitter: EventEmitter<FilesystemEvent>;
-  
+
   constructor(
     private baseFilesystem: IFileSystem,
     private events?: FilesystemEventTypes[],
@@ -36,40 +44,40 @@ export class ObservableFileSystem implements IFileSystem {
   getEventEmitter(): EventEmitter<FilesystemEvent> {
     return this.eventEmitter;
   }
-  
+
   private shouldEmit(eventType: FilesystemEventTypes): boolean {
     return !this.events || this.events.includes(eventType);
   }
 
   existsSync(filename: string): boolean {
     const result = this.baseFilesystem.existsSync(filename);
-    
+
     if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
       this.eventEmitter.emit({
         type: FilesystemEventTypes.EXISTS,
         data: {
           filePath: filename,
-          operation: 'exists',
-          result
-        }
+          operation: "exists",
+          result,
+        },
       });
     }
-    
+
     return result;
   }
 
   readFileSync(filename: string): string {
     try {
       const content = this.baseFilesystem.readFileSync(filename);
-      
+
       if (this.shouldEmit(FilesystemEventTypes.READ)) {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: 'read',
-            result: content.length
-          }
+            operation: "read",
+            result: content.length,
+          },
         });
       }
 
@@ -80,9 +88,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: 'read',
-            error: error as Error
-          }
+            operation: "read",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -98,9 +106,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: 'write',
-            result: data.length
-          }
+            operation: "write",
+            result: data.length,
+          },
         });
       }
     } catch (error) {
@@ -109,9 +117,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: 'write',
-            error: error as Error
-          }
+            operation: "write",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -127,8 +135,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: 'delete'
-          }
+            operation: "delete",
+          },
         });
       }
     } catch (error) {
@@ -137,15 +145,15 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: 'delete',
-            error: error as Error
-          }
+            operation: "delete",
+            error: error as Error,
+          },
         });
       }
       throw error;
     }
   }
-  
+
   deleteDirSync(dirPath: string): void {
     try {
       this.baseFilesystem.deleteDirSync(dirPath);
@@ -155,8 +163,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'deleteDir'
-          }
+            operation: "deleteDir",
+          },
         });
       }
     } catch (error) {
@@ -165,9 +173,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'deleteDir',
-            error: error as Error
-          }
+            operation: "deleteDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -183,8 +191,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'ensureDir'
-          }
+            operation: "ensureDir",
+          },
         });
       }
     } catch (error) {
@@ -193,9 +201,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: 'ensureDir',
-            error: error as Error
-          }
+            operation: "ensureDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -211,9 +219,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: 'readDir',
-            result: result.length
-          }
+            operation: "readDir",
+            result: result.length,
+          },
         });
       }
 
@@ -224,9 +232,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: 'readDir',
-            error: error as Error
-          }
+            operation: "readDir",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -242,9 +250,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: 'chmod',
-            result: mode
-          }
+            operation: "chmod",
+            result: mode,
+          },
         });
       }
     } catch (error) {
@@ -253,9 +261,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: 'chmod',
-            error: error as Error
-          }
+            operation: "chmod",
+            error: error as Error,
+          },
         });
       }
       throw error;
@@ -264,20 +272,20 @@ export class ObservableFileSystem implements IFileSystem {
 
   statSync(path: string): FileStats {
     if (!this.baseFilesystem.statSync) {
-      throw new Error('Base filesystem does not support statSync operation');
+      throw new Error("Base filesystem does not support statSync operation");
     }
-    
+
     try {
       const result = this.baseFilesystem.statSync(path);
-      
+
       if (this.shouldEmit(FilesystemEventTypes.STAT)) {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.STAT,
           data: {
             filePath: path,
-            operation: 'stat',
-            result: result.size
-          }
+            operation: "stat",
+            result: result.size,
+          },
         });
       }
 
@@ -288,9 +296,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.STAT,
           data: {
             filePath: path,
-            operation: 'stat',
-            error: error as Error
-          }
+            operation: "stat",
+            error: error as Error,
+          },
         });
       }
       throw error;

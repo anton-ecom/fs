@@ -1,10 +1,10 @@
-import { EventEmitter, type Event } from '@synet/patterns';
+import { type Event, EventEmitter } from "@synet/patterns";
 import type { IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * File operation types for analytics tracking
  */
-export type FileAction = 'read' | 'write' | 'delete';
+export type FileAction = "read" | "write" | "delete";
 
 /**
  * Individual file access record
@@ -42,7 +42,7 @@ export interface AnalyticsFileSystemOptions {
  * Event emitted when analytics threshold is reached
  */
 export interface AnalyticsStatsEvent extends Event {
-  type: 'analytics.stats';
+  type: "analytics.stats";
   data: Stats;
 }
 
@@ -54,14 +54,14 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
   private eventEmitter: EventEmitter<AnalyticsStatsEvent>;
   private stats: Stats = {
     stats: { read: 0, write: 0, delete: 0 },
-    fileReads: []
+    fileReads: [],
   };
   private operationCount = 0;
   private readonly emitThreshold: number;
 
   constructor(
     private baseFileSystem: IAsyncFileSystem,
-    private options: AnalyticsFileSystemOptions = {}
+    private options: AnalyticsFileSystemOptions = {},
   ) {
     this.eventEmitter = new EventEmitter<AnalyticsStatsEvent>();
     this.emitThreshold = options.emitOn ?? 100;
@@ -73,7 +73,7 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
   getStats(): Stats {
     return {
       stats: { ...this.stats.stats },
-      fileReads: [...this.stats.fileReads]
+      fileReads: [...this.stats.fileReads],
     };
   }
 
@@ -90,12 +90,12 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
   private recordOperation(file: string, action: FileAction): void {
     // Update counters
     this.stats.stats[action]++;
-    
+
     // Record file access
     this.stats.fileReads.push({
       file,
       timestamp: new Date().toISOString(),
-      access: action
+      access: action,
     });
 
     this.operationCount++;
@@ -111,16 +111,16 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
    */
   private emitStats(): void {
     const currentStats = this.getStats();
-    
+
     this.eventEmitter.emit({
-      type: 'analytics.stats',
-      data: currentStats
+      type: "analytics.stats",
+      data: currentStats,
     });
 
     // Reset analytics data
     this.stats = {
       stats: { read: 0, write: 0, delete: 0 },
-      fileReads: []
+      fileReads: [],
     };
     this.operationCount = 0;
   }
@@ -136,18 +136,18 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
 
   async readFile(path: string): Promise<string> {
     const result = await this.baseFileSystem.readFile(path);
-    this.recordOperation(path, 'read');
+    this.recordOperation(path, "read");
     return result;
   }
 
   async writeFile(path: string, data: string): Promise<void> {
     await this.baseFileSystem.writeFile(path, data);
-    this.recordOperation(path, 'write');
+    this.recordOperation(path, "write");
   }
 
   async deleteFile(path: string): Promise<void> {
     await this.baseFileSystem.deleteFile(path);
-    this.recordOperation(path, 'delete');
+    this.recordOperation(path, "delete");
   }
 
   async deleteDir(path: string): Promise<void> {
@@ -187,15 +187,15 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
  */
 export function createAnalyticsFileSystem(
   baseFileSystem: IAsyncFileSystem,
-  options: AnalyticsFileSystemOptions = {}
+  options: AnalyticsFileSystemOptions = {},
 ): {
   instance: AnalyticsFileSystem;
   eventEmitter: EventEmitter<AnalyticsStatsEvent>;
 } {
   const instance = new AnalyticsFileSystem(baseFileSystem, options);
-  
+
   return {
     instance,
-    eventEmitter: instance.getEventEmitter()
+    eventEmitter: instance.getEventEmitter(),
   };
 }

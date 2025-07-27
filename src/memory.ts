@@ -1,10 +1,9 @@
 import { fs as memfs } from "memfs";
-import type { IFileSystem, FileStats } from "./filesystem.interface";
+import type { FileStats, IFileSystem } from "./filesystem.interface";
 /**
  * In-memory file system implementation using memfs
  */
 export class MemFileSystem implements IFileSystem {
-  
   existsSync(path: string): boolean {
     try {
       memfs.statSync(path);
@@ -13,7 +12,7 @@ export class MemFileSystem implements IFileSystem {
       return false;
     }
   }
- 
+
   readFileSync(path: string): string {
     try {
       const buffer = memfs.readFileSync(path);
@@ -22,8 +21,6 @@ export class MemFileSystem implements IFileSystem {
       throw new Error(`Failed to read file ${path}: ${error}`);
     }
   }
-
-  
 
   writeFileSync(path: string, data: string): void {
     try {
@@ -39,7 +36,6 @@ export class MemFileSystem implements IFileSystem {
     }
   }
 
-  
   deleteDirSync(path: string): void {
     try {
       memfs.rmdirSync(path, { recursive: true });
@@ -51,7 +47,6 @@ export class MemFileSystem implements IFileSystem {
     }
   }
 
-  
   ensureDirSync(dirPath: string): void {
     try {
       // Use memfs.mkdirSync instead of fSync
@@ -66,8 +61,7 @@ export class MemFileSystem implements IFileSystem {
     }
   }
 
-  deleteFileSync(path:string) : void {
-
+  deleteFileSync(path: string): void {
     try {
       memfs.unlinkSync(path);
     } catch (error) {
@@ -77,7 +71,6 @@ export class MemFileSystem implements IFileSystem {
       }
     }
   }
- 
 
   readDirSync(dirPath: string): string[] {
     try {
@@ -108,20 +101,20 @@ export class MemFileSystem implements IFileSystem {
     }
   }
 
-    stat(path: string): FileStats {
-      const stats = memfs.statSync(path);
-      if (!stats) {
-        throw new Error(`Failed to get stats for ${path}`);
-      }
-      return {
-        isFile: () => stats.isFile(),
-        isDirectory: () => stats.isDirectory(),
-        isSymbolicLink: () => stats.isSymbolicLink(),
-        size: Number(stats.size),
-        mtime: stats.mtime,
-        ctime: stats.ctime,
-        atime: stats.atime,
-        mode: Number(stats.mode),
-      };
+  stat(path: string): FileStats {
+    const stats = memfs.statSync(path);
+    if (!stats) {
+      throw new Error(`Failed to get stats for ${path}`);
     }
+    return {
+      isFile: () => stats.isFile(),
+      isDirectory: () => stats.isDirectory(),
+      isSymbolicLink: () => stats.isSymbolicLink(),
+      size: Number(stats.size),
+      mtime: stats.mtime,
+      ctime: stats.ctime,
+      atime: stats.atime,
+      mode: Number(stats.mode),
+    };
+  }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@synet/fs",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Robust, battle-tested filesystem abstraction for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

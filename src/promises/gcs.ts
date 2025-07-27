@@ -1,5 +1,5 @@
-import { Storage, Bucket, File } from '@google-cloud/storage';
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import { type Bucket, File, Storage } from "@google-cloud/storage";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * Google Cloud Storage filesystem configuration options
@@ -31,7 +31,7 @@ interface GCSFileCache {
 
 /**
  * Google Cloud Storage-based async filesystem implementation
- * 
+ *
  * Provides asynchronous filesystem operations on Google Cloud Storage.
  * Each file operation corresponds to GCS object operations.
  * Directories are handled virtually through object name prefixes.
@@ -39,21 +39,23 @@ interface GCSFileCache {
 export class GCSFileSystem implements IAsyncFileSystem {
   private storage: Storage;
   private bucket: Bucket;
-  private options: Required<Omit<GCSFileSystemOptions, 'keyFilename' | 'credentials' | 'apiEndpoint'>> & 
-    Pick<GCSFileSystemOptions, 'keyFilename' | 'credentials' | 'apiEndpoint'>;
+  private options: Required<
+    Omit<GCSFileSystemOptions, "keyFilename" | "credentials" | "apiEndpoint">
+  > &
+    Pick<GCSFileSystemOptions, "keyFilename" | "credentials" | "apiEndpoint">;
   private cache = new Map<string, GCSFileCache>();
 
   constructor(options: GCSFileSystemOptions) {
     this.options = {
-      prefix: '',
-      ...options
+      prefix: "",
+      ...options,
     };
 
     this.storage = new Storage({
       projectId: this.options.projectId,
       keyFilename: this.options.keyFilename,
       credentials: this.options.credentials,
-      apiEndpoint: this.options.apiEndpoint
+      apiEndpoint: this.options.apiEndpoint,
     });
 
     this.bucket = this.storage.bucket(this.options.bucket);
@@ -66,7 +68,7 @@ export class GCSFileSystem implements IAsyncFileSystem {
   async exists(path: string): Promise<boolean> {
     try {
       const objectName = this.getGCSObjectName(path);
-      
+
       // Check cache first
       if (this.cache.has(objectName)) {
         return true;
@@ -81,9 +83,14 @@ export class GCSFileSystem implements IAsyncFileSystem {
         try {
           const [metadata] = await file.getMetadata();
           this.cache.set(objectName, {
-            size: typeof metadata.size === 'string' ? parseInt(metadata.size, 10) : (metadata.size || 0),
-            lastModified: new Date(metadata.timeCreated || metadata.updated || Date.now()),
-            etag: metadata.etag || ''
+            size:
+              typeof metadata.size === "string"
+                ? Number.parseInt(metadata.size, 10)
+                : metadata.size || 0,
+            lastModified: new Date(
+              metadata.timeCreated || metadata.updated || Date.now(),
+            ),
+            etag: metadata.etag || "",
           });
         } catch {
           // If metadata fails, just return true for existence
@@ -96,7 +103,9 @@ export class GCSFileSystem implements IAsyncFileSystem {
       if (this.isNotFoundError(error)) {
         return false;
       }
-      throw new Error(`[GCSFileSystem] Failed to check file existence for ${path}: ${error}`);
+      throw new Error(
+        `[GCSFileSystem] Failed to check file existence for ${path}: ${error}`,
+      );
     }
   }
 
@@ -107,7 +116,7 @@ export class GCSFileSystem implements IAsyncFileSystem {
   async readFile(path: string): Promise<string> {
     try {
       const objectName = this.getGCSObjectName(path);
-      
+
       // Check cache first
       const cached = this.cache.get(objectName);
       if (cached?.content) {
@@ -117,24 +126,29 @@ export class GCSFileSystem implements IAsyncFileSystem {
       // Fetch from GCS
       const file = this.bucket.file(objectName);
       const [content] = await file.download();
-      const contentStr = content.toString('utf8');
-      
+      const contentStr = content.toString("utf8");
+
       // Get metadata for caching
       try {
         const [metadata] = await file.getMetadata();
         this.cache.set(objectName, {
           content: contentStr,
-          size: typeof metadata.size === 'string' ? parseInt(metadata.size, 10) : (metadata.size || 0),
-          lastModified: new Date(metadata.timeCreated || metadata.updated || Date.now()),
-          etag: metadata.etag || ''
+          size:
+            typeof metadata.size === "string"
+              ? Number.parseInt(metadata.size, 10)
+              : metadata.size || 0,
+          lastModified: new Date(
+            metadata.timeCreated || metadata.updated || Date.now(),
+          ),
+          etag: metadata.etag || "",
         });
       } catch {
         // Cache without metadata if it fails
         this.cache.set(objectName, {
           content: contentStr,
-          size: Buffer.byteLength(contentStr, 'utf8'),
+          size: Buffer.byteLength(contentStr, "utf8"),
           lastModified: new Date(),
-          etag: ''
+          etag: "",
         });
       }
 
@@ -156,11 +170,11 @@ export class GCSFileSystem implements IAsyncFileSystem {
     try {
       const objectName = this.getGCSObjectName(path);
       const file = this.bucket.file(objectName);
-      
+
       const saveOptions = {
         metadata: {
-          contentType: this.getContentType(path)
-        }
+          contentType: this.getContentType(path),
+        },
       };
 
       await file.save(data, saveOptions);
@@ -168,11 +182,10 @@ export class GCSFileSystem implements IAsyncFileSystem {
       // Update cache
       this.cache.set(objectName, {
         content: data,
-        size: Buffer.byteLength(data, 'utf8'),
+        size: Buffer.byteLength(data, "utf8"),
         lastModified: new Date(),
-        etag: '' // Will be updated when we next read metadata
+        etag: "", // Will be updated when we next read metadata
       });
-
     } catch (error: unknown) {
       throw new Error(`[GCSFileSystem] Failed to write file ${path}: ${error}`);
     }
@@ -186,19 +199,20 @@ export class GCSFileSystem implements IAsyncFileSystem {
     try {
       const objectName = this.getGCSObjectName(path);
       const file = this.bucket.file(objectName);
-      
+
       await file.delete();
 
       // Remove from cache
       this.cache.delete(objectName);
-
     } catch (error: unknown) {
       // Remove from cache even if delete fails
       this.cache.delete(this.getGCSObjectName(path));
-      
+
       // GCS delete throws error if object doesn't exist, unlike S3
       if (!this.isNotFoundError(error)) {
-        throw new Error(`[GCSFileSystem] Failed to delete file ${path}: ${error}`);
+        throw new Error(
+          `[GCSFileSystem] Failed to delete file ${path}: ${error}`,
+        );
       }
     }
   }
@@ -210,8 +224,8 @@ export class GCSFileSystem implements IAsyncFileSystem {
   async deleteDir(path: string): Promise<void> {
     try {
       const prefix = this.getGCSObjectName(path);
-      const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
-      
+      const normalizedPrefix = prefix.endsWith("/") ? prefix : `${prefix}/`;
+
       // List all objects with the prefix
       const [files] = await this.bucket.getFiles({ prefix: normalizedPrefix });
 
@@ -222,13 +236,14 @@ export class GCSFileSystem implements IAsyncFileSystem {
       // Delete each object
       for (const file of files) {
         await file.delete();
-        
+
         // Remove from cache
         this.cache.delete(file.name);
       }
-
     } catch (error: unknown) {
-      throw new Error(`[GCSFileSystem] Failed to delete directory ${path}: ${error}`);
+      throw new Error(
+        `[GCSFileSystem] Failed to delete directory ${path}: ${error}`,
+      );
     }
   }
 
@@ -248,11 +263,12 @@ export class GCSFileSystem implements IAsyncFileSystem {
   async readDir(dirPath: string): Promise<string[]> {
     try {
       const prefix = this.getGCSObjectName(dirPath);
-      const normalizedPrefix = prefix === '' ? '' : (prefix.endsWith('/') ? prefix : `${prefix}/`);
-      
+      const normalizedPrefix =
+        prefix === "" ? "" : prefix.endsWith("/") ? prefix : `${prefix}/`;
+
       // Get all files with the prefix
-      const [files] = await this.bucket.getFiles({ 
-        prefix: normalizedPrefix
+      const [files] = await this.bucket.getFiles({
+        prefix: normalizedPrefix,
       });
 
       const result: string[] = [];
@@ -261,14 +277,14 @@ export class GCSFileSystem implements IAsyncFileSystem {
       // Process files to extract directory structure
       for (const file of files) {
         if (file.name && file.name !== normalizedPrefix) {
-          const relativeName = file.name.replace(normalizedPrefix, '');
-          
+          const relativeName = file.name.replace(normalizedPrefix, "");
+
           // Skip empty relative names
           if (!relativeName) continue;
-          
+
           // If it contains a slash, it's in a subdirectory
-          if (relativeName.includes('/')) {
-            const dirName = relativeName.split('/')[0];
+          if (relativeName.includes("/")) {
+            const dirName = relativeName.split("/")[0];
             if (dirName && !seenDirectories.has(dirName)) {
               result.push(`${dirName}/`);
               seenDirectories.add(dirName);
@@ -281,12 +297,13 @@ export class GCSFileSystem implements IAsyncFileSystem {
       }
 
       return result;
-
     } catch (error: unknown) {
       if (this.isNotFoundError(error)) {
         return [];
       }
-      throw new Error(`[GCSFileSystem] Failed to read directory ${dirPath}: ${error}`);
+      throw new Error(
+        `[GCSFileSystem] Failed to read directory ${dirPath}: ${error}`,
+      );
     }
   }
 
@@ -308,7 +325,7 @@ export class GCSFileSystem implements IAsyncFileSystem {
   async stat(path: string): Promise<FileStats> {
     try {
       const objectName = this.getGCSObjectName(path);
-      
+
       // Check cache first
       const cached = this.cache.get(objectName);
       if (cached) {
@@ -319,14 +336,19 @@ export class GCSFileSystem implements IAsyncFileSystem {
       const file = this.bucket.file(objectName);
       const [metadata] = await file.getMetadata();
 
-      const size = typeof metadata.size === 'string' ? parseInt(metadata.size, 10) : (metadata.size || 0);
-      const lastModified = new Date(metadata.timeCreated || metadata.updated || Date.now());
-      
+      const size =
+        typeof metadata.size === "string"
+          ? Number.parseInt(metadata.size, 10)
+          : metadata.size || 0;
+      const lastModified = new Date(
+        metadata.timeCreated || metadata.updated || Date.now(),
+      );
+
       // Cache metadata
       this.cache.set(objectName, {
         size,
         lastModified,
-        etag: metadata.etag || ''
+        etag: metadata.etag || "",
       });
 
       return this.createFileStats(size, lastModified, false);
@@ -334,7 +356,9 @@ export class GCSFileSystem implements IAsyncFileSystem {
       if (this.isNotFoundError(error)) {
         throw new Error(`[GCSFileSystem] File not found: ${path}`);
       }
-      throw new Error(`[GCSFileSystem] Failed to get file stats for ${path}: ${error}`);
+      throw new Error(
+        `[GCSFileSystem] Failed to get file stats for ${path}: ${error}`,
+      );
     }
   }
 
@@ -352,7 +376,7 @@ export class GCSFileSystem implements IAsyncFileSystem {
     return {
       bucket: this.options.bucket,
       projectId: this.options.projectId,
-      prefix: this.options.prefix
+      prefix: this.options.prefix,
     };
   }
 
@@ -362,14 +386,16 @@ export class GCSFileSystem implements IAsyncFileSystem {
    */
   private getGCSObjectName(path: string): string {
     // Remove leading slashes and normalize
-    const normalizedPath = path.replace(/^\.?\/+/, '').replace(/\/+/g, '/');
-    
+    const normalizedPath = path.replace(/^\.?\/+/, "").replace(/\/+/g, "/");
+
     // Apply prefix if configured
     if (this.options.prefix) {
-      const normalizedPrefix = this.options.prefix.replace(/^\/+|\/+$/g, '');
-      return normalizedPrefix ? `${normalizedPrefix}/${normalizedPath}` : normalizedPath;
+      const normalizedPrefix = this.options.prefix.replace(/^\/+|\/+$/g, "");
+      return normalizedPrefix
+        ? `${normalizedPrefix}/${normalizedPath}`
+        : normalizedPath;
     }
-    
+
     return normalizedPath;
   }
 
@@ -378,22 +404,22 @@ export class GCSFileSystem implements IAsyncFileSystem {
    * @param path File path
    */
   private getContentType(path: string): string {
-    const ext = path.toLowerCase().split('.').pop();
+    const ext = path.toLowerCase().split(".").pop();
     const contentTypes: Record<string, string> = {
-      'json': 'application/json',
-      'txt': 'text/plain',
-      'html': 'text/html',
-      'css': 'text/css',
-      'js': 'application/javascript',
-      'xml': 'application/xml',
-      'md': 'text/markdown',
-      'png': 'image/png',
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'gif': 'image/gif',
-      'pdf': 'application/pdf'
+      json: "application/json",
+      txt: "text/plain",
+      html: "text/html",
+      css: "text/css",
+      js: "application/javascript",
+      xml: "application/xml",
+      md: "text/markdown",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      pdf: "application/pdf",
     };
-    return contentTypes[ext || ''] || 'application/octet-stream';
+    return contentTypes[ext || ""] || "application/octet-stream";
   }
 
   /**
@@ -401,21 +427,26 @@ export class GCSFileSystem implements IAsyncFileSystem {
    * @param error Error object
    */
   private isNotFoundError(error: unknown): boolean {
-    if (!error || typeof error !== 'object') {
+    if (!error || typeof error !== "object") {
       return false;
     }
-    
+
     // Check for GCS API not found error
-    if ('code' in error && (error as { code: number }).code === 404) {
+    if ("code" in error && (error as { code: number }).code === 404) {
       return true;
     }
-    
+
     // Check for error message patterns
-    if ('message' in error && typeof (error as { message: string }).message === 'string') {
+    if (
+      "message" in error &&
+      typeof (error as { message: string }).message === "string"
+    ) {
       const message = (error as { message: string }).message.toLowerCase();
-      return message.includes('not found') || message.includes('no such object');
+      return (
+        message.includes("not found") || message.includes("no such object")
+      );
     }
-    
+
     return false;
   }
 
@@ -425,7 +456,11 @@ export class GCSFileSystem implements IAsyncFileSystem {
    * @param lastModified Last modified date
    * @param isDirectory Is the file a directory
    */
-  private createFileStats(size: number, lastModified: Date, isDirectory: boolean): FileStats {
+  private createFileStats(
+    size: number,
+    lastModified: Date,
+    isDirectory: boolean,
+  ): FileStats {
     return {
       isFile: () => !isDirectory,
       isDirectory: () => isDirectory,
@@ -434,7 +469,7 @@ export class GCSFileSystem implements IAsyncFileSystem {
       mtime: lastModified,
       ctime: lastModified, // GCS doesn't have separate creation time
       atime: lastModified, // GCS doesn't track access time
-      mode: 0o644 // Default permissions for GCS objects
+      mode: 0o644, // Default permissions for GCS objects
     };
   }
 }
@@ -443,6 +478,8 @@ export class GCSFileSystem implements IAsyncFileSystem {
  * Create a new async GCS filesystem instance
  * @param options GCS filesystem configuration
  */
-export function createGCSFileSystem(options: GCSFileSystemOptions): GCSFileSystem {
+export function createGCSFileSystem(
+  options: GCSFileSystemOptions,
+): GCSFileSystem {
   return new GCSFileSystem(options);
 }

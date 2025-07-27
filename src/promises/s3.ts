@@ -1,5 +1,12 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import type { IAsyncFileSystem, FileStats } from "./filesystem.interface";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * S3 filesystem configuration options
@@ -35,32 +42,51 @@ interface S3FileCache {
 
 /**
  * Async S3-based filesystem implementation
- * 
+ *
  * Provides filesystem operations on AWS S3 or S3-compatible storage.
  * Each file operation corresponds to S3 object operations.
  * Directories are handled virtually through object key prefixes.
  */
 export class S3FileSystem implements IAsyncFileSystem {
   private s3: S3Client;
-  private options: Required<Omit<S3FileSystemOptions, 'accessKeyId' | 'secretAccessKey' | 'sessionToken' | 'endpoint' | 'forcePathStyle'>> & 
-    Pick<S3FileSystemOptions, 'accessKeyId' | 'secretAccessKey' | 'sessionToken' | 'endpoint' | 'forcePathStyle'>;
+  private options: Required<
+    Omit<
+      S3FileSystemOptions,
+      | "accessKeyId"
+      | "secretAccessKey"
+      | "sessionToken"
+      | "endpoint"
+      | "forcePathStyle"
+    >
+  > &
+    Pick<
+      S3FileSystemOptions,
+      | "accessKeyId"
+      | "secretAccessKey"
+      | "sessionToken"
+      | "endpoint"
+      | "forcePathStyle"
+    >;
   private cache = new Map<string, S3FileCache>();
 
   constructor(options: S3FileSystemOptions) {
     this.options = {
-      prefix: '',
-      ...options
+      prefix: "",
+      ...options,
     };
 
     this.s3 = new S3Client({
       region: this.options.region,
-      credentials: this.options.accessKeyId && this.options.secretAccessKey ? {
-        accessKeyId: this.options.accessKeyId,
-        secretAccessKey: this.options.secretAccessKey,
-        sessionToken: this.options.sessionToken
-      } : undefined,
+      credentials:
+        this.options.accessKeyId && this.options.secretAccessKey
+          ? {
+              accessKeyId: this.options.accessKeyId,
+              secretAccessKey: this.options.secretAccessKey,
+              sessionToken: this.options.sessionToken,
+            }
+          : undefined,
       endpoint: this.options.endpoint,
-      forcePathStyle: this.options.forcePathStyle
+      forcePathStyle: this.options.forcePathStyle,
     });
   }
 
@@ -71,24 +97,26 @@ export class S3FileSystem implements IAsyncFileSystem {
   async exists(path: string): Promise<boolean> {
     try {
       const key = this.getS3Key(path);
-      
+
       // Check cache first
       if (this.cache.has(key)) {
         return true;
       }
 
       // Check S3
-      const response = await this.s3.send(new HeadObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key
-      }));
+      const response = await this.s3.send(
+        new HeadObjectCommand({
+          Bucket: this.options.bucket,
+          Key: key,
+        }),
+      );
 
       if (response) {
         // Cache metadata
         this.cache.set(key, {
           size: response.ContentLength || 0,
           lastModified: response.LastModified || new Date(),
-          etag: response.ETag || ''
+          etag: response.ETag || "",
         });
         return true;
       }
@@ -109,7 +137,7 @@ export class S3FileSystem implements IAsyncFileSystem {
   async readFile(path: string): Promise<string> {
     try {
       const key = this.getS3Key(path);
-      
+
       // Check cache first
       const cached = this.cache.get(key);
       if (cached?.content) {
@@ -117,20 +145,24 @@ export class S3FileSystem implements IAsyncFileSystem {
       }
 
       // Fetch from S3
-      const response = await this.s3.send(new GetObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key
-      }));
+      const response = await this.s3.send(
+        new GetObjectCommand({
+          Bucket: this.options.bucket,
+          Key: key,
+        }),
+      );
 
       // Handle empty files - response.Body might be undefined or empty
-      const content = response.Body ? await this.bodyToString(response.Body) : '';
-      
+      const content = response.Body
+        ? await this.bodyToString(response.Body)
+        : "";
+
       // Cache the file
       this.cache.set(key, {
         content,
         size: response.ContentLength || content.length,
         lastModified: response.LastModified || new Date(),
-        etag: response.ETag || ''
+        etag: response.ETag || "",
       });
 
       return content;
@@ -149,27 +181,28 @@ export class S3FileSystem implements IAsyncFileSystem {
    */
   async writeFile(path: string, data: string): Promise<void> {
     if (data === undefined || data === null) {
-      throw new Error('Data parameter is required');
+      throw new Error("Data parameter is required");
     }
 
     try {
       const key = this.getS3Key(path);
-      
-      const response = await this.s3.send(new PutObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-        Body: data,
-        ContentType: this.getContentType(path)
-      }));
+
+      const response = await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.options.bucket,
+          Key: key,
+          Body: data,
+          ContentType: this.getContentType(path),
+        }),
+      );
 
       // Update cache
       this.cache.set(key, {
         content: data,
-        size: Buffer.byteLength(data, 'utf8'),
+        size: Buffer.byteLength(data, "utf8"),
         lastModified: new Date(),
-        etag: response.ETag || ''
+        etag: response.ETag || "",
       });
-
     } catch (error: unknown) {
       throw new Error(`Failed to write file ${path}: ${error}`);
     }
@@ -182,15 +215,16 @@ export class S3FileSystem implements IAsyncFileSystem {
   async deleteFile(path: string): Promise<void> {
     try {
       const key = this.getS3Key(path);
-      
-      await this.s3.send(new DeleteObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key
-      }));
+
+      await this.s3.send(
+        new DeleteObjectCommand({
+          Bucket: this.options.bucket,
+          Key: key,
+        }),
+      );
 
       // Remove from cache
       this.cache.delete(key);
-
     } catch (error: unknown) {
       // S3 delete is idempotent - doesn't fail if object doesn't exist
       // But we still remove from cache just in case
@@ -205,13 +239,15 @@ export class S3FileSystem implements IAsyncFileSystem {
   async deleteDir(path: string): Promise<void> {
     try {
       const prefix = this.getS3Key(path);
-      const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
-      
+      const normalizedPrefix = prefix.endsWith("/") ? prefix : `${prefix}/`;
+
       // List all objects with the prefix
-      const response = await this.s3.send(new ListObjectsV2Command({
-        Bucket: this.options.bucket,
-        Prefix: normalizedPrefix
-      }));
+      const response = await this.s3.send(
+        new ListObjectsV2Command({
+          Bucket: this.options.bucket,
+          Prefix: normalizedPrefix,
+        }),
+      );
 
       if (!response.Contents || response.Contents.length === 0) {
         return; // Nothing to delete
@@ -220,16 +256,17 @@ export class S3FileSystem implements IAsyncFileSystem {
       // Delete each object
       for (const object of response.Contents) {
         if (object.Key) {
-          await this.s3.send(new DeleteObjectCommand({
-            Bucket: this.options.bucket,
-            Key: object.Key
-          }));
-          
+          await this.s3.send(
+            new DeleteObjectCommand({
+              Bucket: this.options.bucket,
+              Key: object.Key,
+            }),
+          );
+
           // Remove from cache
           this.cache.delete(object.Key);
         }
       }
-
     } catch (error: unknown) {
       throw new Error(`Failed to delete directory ${path}: ${error}`);
     }
@@ -251,13 +288,16 @@ export class S3FileSystem implements IAsyncFileSystem {
   async readDir(dirPath: string): Promise<string[]> {
     try {
       const prefix = this.getS3Key(dirPath);
-      const normalizedPrefix = prefix === '' ? '' : (prefix.endsWith('/') ? prefix : `${prefix}/`);
-      
-      const response = await this.s3.send(new ListObjectsV2Command({
-        Bucket: this.options.bucket,
-        Prefix: normalizedPrefix,
-        Delimiter: '/'
-      }));
+      const normalizedPrefix =
+        prefix === "" ? "" : prefix.endsWith("/") ? prefix : `${prefix}/`;
+
+      const response = await this.s3.send(
+        new ListObjectsV2Command({
+          Bucket: this.options.bucket,
+          Prefix: normalizedPrefix,
+          Delimiter: "/",
+        }),
+      );
 
       const files: string[] = [];
 
@@ -265,8 +305,8 @@ export class S3FileSystem implements IAsyncFileSystem {
       if (response.Contents) {
         for (const object of response.Contents) {
           if (object.Key && object.Key !== normalizedPrefix) {
-            const fileName = object.Key.replace(normalizedPrefix, '');
-            if (fileName && !fileName.includes('/')) {
+            const fileName = object.Key.replace(normalizedPrefix, "");
+            if (fileName && !fileName.includes("/")) {
               files.push(fileName);
             }
           }
@@ -277,7 +317,10 @@ export class S3FileSystem implements IAsyncFileSystem {
       if (response.CommonPrefixes) {
         for (const commonPrefix of response.CommonPrefixes) {
           if (commonPrefix.Prefix) {
-            const dirName = commonPrefix.Prefix.replace(normalizedPrefix, '').replace('/', '');
+            const dirName = commonPrefix.Prefix.replace(
+              normalizedPrefix,
+              "",
+            ).replace("/", "");
             if (dirName) {
               files.push(`${dirName}/`);
             }
@@ -286,7 +329,6 @@ export class S3FileSystem implements IAsyncFileSystem {
       }
 
       return files;
-
     } catch (error: unknown) {
       if (this.isNotFoundError(error)) {
         return [];
@@ -313,7 +355,7 @@ export class S3FileSystem implements IAsyncFileSystem {
   async stat(path: string): Promise<FileStats> {
     try {
       const key = this.getS3Key(path);
-      
+
       // Check cache first
       const cached = this.cache.get(key);
       if (cached) {
@@ -321,19 +363,21 @@ export class S3FileSystem implements IAsyncFileSystem {
       }
 
       // Fetch metadata from S3
-      const response = await this.s3.send(new HeadObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key
-      }));
+      const response = await this.s3.send(
+        new HeadObjectCommand({
+          Bucket: this.options.bucket,
+          Key: key,
+        }),
+      );
 
       const size = response.ContentLength || 0;
       const lastModified = response.LastModified || new Date();
-      
+
       // Cache metadata
       this.cache.set(key, {
         size,
         lastModified,
-        etag: response.ETag || ''
+        etag: response.ETag || "",
       });
 
       return this.createFileStats(size, lastModified, false);
@@ -359,7 +403,7 @@ export class S3FileSystem implements IAsyncFileSystem {
     return {
       bucket: this.options.bucket,
       region: this.options.region,
-      prefix: this.options.prefix
+      prefix: this.options.prefix,
     };
   }
 
@@ -369,14 +413,16 @@ export class S3FileSystem implements IAsyncFileSystem {
    */
   private getS3Key(path: string): string {
     // Remove leading slashes and normalize
-    const normalizedPath = path.replace(/^\.?\/+/, '').replace(/\/+/g, '/');
-    
+    const normalizedPath = path.replace(/^\.?\/+/, "").replace(/\/+/g, "/");
+
     // Apply prefix if configured
     if (this.options.prefix) {
-      const normalizedPrefix = this.options.prefix.replace(/^\/+|\/+$/g, '');
-      return normalizedPrefix ? `${normalizedPrefix}/${normalizedPath}` : normalizedPath;
+      const normalizedPrefix = this.options.prefix.replace(/^\/+|\/+$/g, "");
+      return normalizedPrefix
+        ? `${normalizedPrefix}/${normalizedPath}`
+        : normalizedPath;
     }
-    
+
     return normalizedPath;
   }
 
@@ -385,17 +431,17 @@ export class S3FileSystem implements IAsyncFileSystem {
    * @param path File path
    */
   private getContentType(path: string): string {
-    const ext = path.toLowerCase().split('.').pop();
+    const ext = path.toLowerCase().split(".").pop();
     const contentTypes: Record<string, string> = {
-      'json': 'application/json',
-      'txt': 'text/plain',
-      'html': 'text/html',
-      'css': 'text/css',
-      'js': 'application/javascript',
-      'xml': 'application/xml',
-      'md': 'text/markdown'
+      json: "application/json",
+      txt: "text/plain",
+      html: "text/html",
+      css: "text/css",
+      js: "application/javascript",
+      xml: "application/xml",
+      md: "text/markdown",
     };
-    return contentTypes[ext || ''] || 'application/octet-stream';
+    return contentTypes[ext || ""] || "application/octet-stream";
   }
 
   /**
@@ -403,22 +449,26 @@ export class S3FileSystem implements IAsyncFileSystem {
    * @param error Error object
    */
   private isNotFoundError(error: unknown): boolean {
-    if (!error || typeof error !== 'object') {
+    if (!error || typeof error !== "object") {
       return false;
     }
-    
+
     // Check for AWS SDK NoSuchKey error
-    if ('name' in error && (error as { name: string }).name === 'NoSuchKey') {
+    if ("name" in error && (error as { name: string }).name === "NoSuchKey") {
       return true;
     }
-    
+
     // Check for HTTP 404 status
-    if ('$metadata' in error && 
-        typeof (error as { $metadata?: { httpStatusCode?: number } }).$metadata === 'object' &&
-        (error as { $metadata: { httpStatusCode?: number } }).$metadata.httpStatusCode === 404) {
+    if (
+      "$metadata" in error &&
+      typeof (error as { $metadata?: { httpStatusCode?: number } })
+        .$metadata === "object" &&
+      (error as { $metadata: { httpStatusCode?: number } }).$metadata
+        .httpStatusCode === 404
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -429,43 +479,50 @@ export class S3FileSystem implements IAsyncFileSystem {
   private async bodyToString(body: unknown): Promise<string> {
     // Handle null/undefined/empty body
     if (!body) {
-      return '';
+      return "";
     }
 
     // AWS SDK v3 body can be a Readable stream, Blob, or other types
-    if (body && typeof body === 'object' && 'transformToString' in body && 
-        typeof (body as { transformToString: () => Promise<string> }).transformToString === 'function') {
+    if (
+      body &&
+      typeof body === "object" &&
+      "transformToString" in body &&
+      typeof (body as { transformToString: () => Promise<string> })
+        .transformToString === "function"
+    ) {
       // For modern AWS SDK v3, use transformToString if available
-      const result = await (body as { transformToString: () => Promise<string> }).transformToString();
-      return result || '';
+      const result = await (
+        body as { transformToString: () => Promise<string> }
+      ).transformToString();
+      return result || "";
     }
-    
+
     // Handle as Node.js stream
-    if (body && typeof body === 'object' && 'pipe' in body) {
+    if (body && typeof body === "object" && "pipe" in body) {
       const chunks: Buffer[] = [];
       const stream = body as NodeJS.ReadableStream;
-      
+
       return new Promise((resolve, reject) => {
-        stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-        stream.on('end', () => {
-          const result = Buffer.concat(chunks).toString('utf8');
-          resolve(result || '');
+        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        stream.on("end", () => {
+          const result = Buffer.concat(chunks).toString("utf8");
+          resolve(result || "");
         });
-        stream.on('error', reject);
+        stream.on("error", reject);
       });
     }
-    
+
     // Fallback: try to convert to string directly
-    if (typeof body === 'string') {
+    if (typeof body === "string") {
       return body;
     }
-    
+
     if (body instanceof Uint8Array) {
-      const result = Buffer.from(body).toString('utf8');
-      return result || '';
+      const result = Buffer.from(body).toString("utf8");
+      return result || "";
     }
-    
-    throw new Error('Unsupported body type for conversion to string');
+
+    throw new Error("Unsupported body type for conversion to string");
   }
 
   /**
@@ -474,7 +531,11 @@ export class S3FileSystem implements IAsyncFileSystem {
    * @param lastModified Last modified date
    * @param isDirectory Is the file a directory
    */
-  private createFileStats(size: number, lastModified: Date, isDirectory: boolean): FileStats {
+  private createFileStats(
+    size: number,
+    lastModified: Date,
+    isDirectory: boolean,
+  ): FileStats {
     return {
       isFile: () => !isDirectory,
       isDirectory: () => isDirectory,
@@ -483,7 +544,7 @@ export class S3FileSystem implements IAsyncFileSystem {
       mtime: lastModified,
       ctime: lastModified, // S3 doesn't have separate creation time
       atime: lastModified, // S3 doesn't track access time
-      mode: 0o644 // Default permissions for S3 objects
+      mode: 0o644, // Default permissions for S3 objects
     };
   }
 }

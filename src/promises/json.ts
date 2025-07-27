@@ -8,7 +8,7 @@ import type { IAsyncFileSystem } from "./filesystem.interface";
 export class JsonFileSystem<T = unknown> {
   constructor(
     private baseFileSystem: IAsyncFileSystem,
-    private options: JsonFileSystemOptions = {}
+    private options: JsonFileSystemOptions = {},
   ) {}
 
   /**
@@ -21,7 +21,10 @@ export class JsonFileSystem<T = unknown> {
     try {
       return JSON.parse(content) as T;
     } catch (error) {
-      throw new JsonParseError(`Failed to parse JSON from ${path}`, error as Error);
+      throw new JsonParseError(
+        `Failed to parse JSON from ${path}`,
+        error as Error,
+      );
     }
   }
 
@@ -32,10 +35,17 @@ export class JsonFileSystem<T = unknown> {
    */
   async writeJson(path: string, data: T): Promise<void> {
     try {
-      const content = JSON.stringify(data, this.options.replacer, this.options.space ?? 2);
+      const content = JSON.stringify(
+        data,
+        this.options.replacer,
+        this.options.space ?? 2,
+      );
       await this.baseFileSystem.writeFile(path, content);
     } catch (error) {
-      throw new JsonStringifyError(`Failed to stringify data for ${path}`, error as Error);
+      throw new JsonStringifyError(
+        `Failed to stringify data for ${path}`,
+        error as Error,
+      );
     }
   }
 
@@ -168,9 +178,12 @@ export interface JsonFileSystemOptions {
  * Error thrown when JSON parsing fails
  */
 export class JsonParseError extends Error {
-  constructor(message: string, public readonly cause: Error) {
+  constructor(
+    message: string,
+    public readonly cause: Error,
+  ) {
     super(message);
-    this.name = 'JsonParseError';
+    this.name = "JsonParseError";
   }
 }
 
@@ -178,9 +191,12 @@ export class JsonParseError extends Error {
  * Error thrown when JSON stringification fails
  */
 export class JsonStringifyError extends Error {
-  constructor(message: string, public readonly cause: Error) {
+  constructor(
+    message: string,
+    public readonly cause: Error,
+  ) {
     super(message);
-    this.name = 'JsonStringifyError';
+    this.name = "JsonStringifyError";
   }
 }
 
@@ -190,6 +206,6 @@ export class JsonStringifyError extends Error {
 export class JsonValidationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'JsonValidationError';
+    this.name = "JsonValidationError";
   }
 }

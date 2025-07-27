@@ -245,24 +245,6 @@ describe('FilesystemUnits Factory', () => {
     });
   });
 
-  describe('github preset', () => {
-    it('should create github configuration', () => {
-      const githubOptions = {
-        token: 'test-token',
-        owner: 'test-owner',
-        repo: 'test-repo'
-      };
-
-      const unit = FilesystemUnits.github(githubOptions);
-      
-      expect(unit.teach().getPrimary()).toBe('github');
-      expect(unit.teach().getFallbacks()).toEqual(['memory']);
-      expect(unit.teach().getBackends()).toEqual(['github', 'memory']);
-    });
-  });
-
-  // Note: S3 and production tests would require actual AWS credentials
-  // They are skipped in this test suite but the structure is verified
 });
 
 describe('Integration Tests', () => {

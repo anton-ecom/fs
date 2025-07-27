@@ -33,14 +33,14 @@ class LRUCache<T> {
 
   constructor(
     private maxSize: number,
-    private defaultTtl: number
+    private defaultTtl: number,
   ) {}
 
   set(key: string, value: T, ttl?: number): void {
     const entry: CacheEntry<T> = {
       data: value,
       timestamp: Date.now(),
-      ttl: ttl ?? this.defaultTtl
+      ttl: ttl ?? this.defaultTtl,
     };
 
     // Remove existing entry if present
@@ -117,7 +117,7 @@ class LRUCache<T> {
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
-      entries: Array.from(this.cache.keys())
+      entries: Array.from(this.cache.keys()),
     };
   }
 }
@@ -134,18 +134,27 @@ export class CachedFileSystem implements IAsyncFileSystem {
 
   constructor(
     private baseFileSystem: IAsyncFileSystem,
-    options: CachedFileSystemOptions = {}
+    options: CachedFileSystemOptions = {},
   ) {
     this.options = {
       maxSize: options.maxSize ?? 100,
       ttl: options.ttl ?? 5 * 60 * 1000, // 5 minutes
       cacheExists: options.cacheExists ?? true,
-      cacheDirListing: options.cacheDirListing ?? true
+      cacheDirListing: options.cacheDirListing ?? true,
     };
 
-    this.readCache = new LRUCache<string>(this.options.maxSize, this.options.ttl);
-    this.existsCache = new LRUCache<boolean>(this.options.maxSize, this.options.ttl);
-    this.dirCache = new LRUCache<string[]>(this.options.maxSize, this.options.ttl);
+    this.readCache = new LRUCache<string>(
+      this.options.maxSize,
+      this.options.ttl,
+    );
+    this.existsCache = new LRUCache<boolean>(
+      this.options.maxSize,
+      this.options.ttl,
+    );
+    this.dirCache = new LRUCache<string[]>(
+      this.options.maxSize,
+      this.options.ttl,
+    );
   }
 
   /**
@@ -156,7 +165,7 @@ export class CachedFileSystem implements IAsyncFileSystem {
       readCache: this.readCache.getStats(),
       existsCache: this.existsCache.getStats(),
       dirCache: this.dirCache.getStats(),
-      options: this.options
+      options: this.options,
     };
   }
 
@@ -175,9 +184,9 @@ export class CachedFileSystem implements IAsyncFileSystem {
   invalidateFile(path: string): void {
     this.readCache.delete(path);
     this.existsCache.delete(path);
-    
+
     // Also invalidate parent directory cache
-    const parentDir = path.substring(0, path.lastIndexOf('/')) || '/';
+    const parentDir = path.substring(0, path.lastIndexOf("/")) || "/";
     this.dirCache.delete(parentDir);
   }
 
@@ -185,11 +194,11 @@ export class CachedFileSystem implements IAsyncFileSystem {
    * Invalidate cache for a directory and all its children
    */
   invalidateDirectory(dirPath: string): void {
-    const normalizedDir = dirPath.endsWith('/') ? dirPath : `${dirPath}/`;
-    
+    const normalizedDir = dirPath.endsWith("/") ? dirPath : `${dirPath}/`;
+
     // Clear directory listing cache
     this.dirCache.delete(dirPath);
-    
+
     // Clear caches for all files in the directory
     for (const key of this.readCache.getStats().entries) {
       if (key.startsWith(normalizedDir)) {
@@ -229,13 +238,13 @@ export class CachedFileSystem implements IAsyncFileSystem {
 
   async writeFile(path: string, data: string): Promise<void> {
     await this.baseFileSystem.writeFile(path, data);
-    
+
     // Update cache with new content
     this.readCache.set(path, data);
     this.existsCache.set(path, true);
-    
+
     // Invalidate parent directory cache
-    const parentDir = path.substring(0, path.lastIndexOf('/')) || '/';
+    const parentDir = path.substring(0, path.lastIndexOf("/")) || "/";
     this.dirCache.delete(parentDir);
   }
 
@@ -266,9 +275,9 @@ export class CachedFileSystem implements IAsyncFileSystem {
 
   async ensureDir(path: string): Promise<void> {
     await this.baseFileSystem.ensureDir(path);
-    
+
     // Invalidate parent directory cache
-    const parentDir = path.substring(0, path.lastIndexOf('/')) || '/';
+    const parentDir = path.substring(0, path.lastIndexOf("/")) || "/";
     this.dirCache.delete(parentDir);
   }
 
@@ -290,7 +299,7 @@ export class CachedFileSystem implements IAsyncFileSystem {
  */
 export function createCachedFileSystem(
   baseFileSystem: IAsyncFileSystem,
-  options?: CachedFileSystemOptions
+  options?: CachedFileSystemOptions,
 ): CachedFileSystem {
   return new CachedFileSystem(baseFileSystem, options);
 }

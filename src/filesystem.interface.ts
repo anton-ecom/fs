@@ -1,4 +1,3 @@
-
 export interface FileStats {
   isFile(): boolean;
   isDirectory(): boolean;
@@ -62,7 +61,7 @@ export interface IFileSystem {
    */
   chmodSync(path: string, mode: number): void;
 
-  /** 
+  /**
    * Get file statistics, custom type for flexibility
    * @param path File path
    */
