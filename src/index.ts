@@ -93,6 +93,11 @@ export {
   type DigitalOceanSpacesOptions as AsyncDigitalOceanSpacesOptions,
 } from "./promises/digitalocean";
 export {
+  LinodeObjectStorageFileSystem as AsyncLinodeObjectStorageFileSystem,
+  createLinodeObjectStorageFileSystem as createAsyncLinodeObjectStorageFileSystem,
+  type LinodeObjectStorageFileSystemOptions as AsyncLinodeObjectStorageOptions,
+} from "./promises/linode";
+export {
   GitHubFileSystem as AsyncGitHubFileSystem,
   type GitHubFileSystemOptions as AsyncGitHubFileSystemOptions,
 } from "./promises/github";

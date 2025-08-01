@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.7  
+version: v.1.0.8  
 description: Files are artefacts of identity
 ```
 
@@ -58,6 +58,7 @@ This pattern provides a consistent filesystem abstraction that enables dependenc
 - **GoogleCloudFileSystem** - Google Cloud Storage with seamless file operations and automatic authentication
 - **DigitalOceanSpacesFileSystem** - DigitalOcean Spaces (S3-compatible) storage with global CDN integration
 - **CloudflareR2FileSystem** - Cloudflare R2 storage with zero egress fees and global edge distribution
+- **LinodeObjectStorageFileSystem** - Linode Object Storage (S3-compatible) with global edge distribution and competitive pricing
 
 ## Coming soon:
 
@@ -240,6 +241,7 @@ import { FS } from '@synet/fs';
 // ✨ The beautiful simplicity:
 const syncFs = FS.sync.memory();      // Synchronous in-memory filesystem
 const asyncFs = FS.async.s3(options); // Asynchronous S3 filesystem
+const linodeFs = FS.async.linode(linodeOptions); // Asynchronous Linode Object Storage
 const devFs = FS.presets.development(); // Quick development setup
 ```
 
@@ -285,6 +287,7 @@ export const FS = {
     google: (options) => AsyncFileSystem.create({ type: "google", options }),
     digitalocean: (options) => AsyncFileSystem.create({ type: "digitalocean", options }),
     r2: (options) => AsyncFileSystem.create({ type: "r2", options }),
+    linode: (options) => AsyncFileSystem.create({ type: "linode", options }),
   },
   
   // Quick presets for common scenarios
@@ -293,7 +296,7 @@ export const FS = {
     developmentAsync: () => FS.async.memory(),
     local: () => FS.sync.node(),
     localAsync: () => FS.async.node(),
-    production: (cloudOptions) => FS.async.azure(cloudOptions), // or google, digitalocean, r2
+    production: (cloudOptions) => FS.async.azure(cloudOptions), // or google, digitalocean, r2, linode
   }
 };
 ```
@@ -769,6 +772,34 @@ const bucketInfo = r2FS.getBucketInfo(); // R2-specific info
 ```
 
 **Key Features**: Zero egress fees, S3-compatible API, global edge performance, automatic scaling, integrated with Cloudflare Workers.
+
+---
+
+### LinodeObjectStorageFileSystem (Async)
+
+**Linode Object Storage (S3-compatible) with global edge distribution and competitive pricing**
+
+Store files in Linode Object Storage with S3-compatible API, competitive pricing, and global edge distribution. Perfect for cost-effective cloud storage.
+
+```typescript
+import { createLinodeObjectStorageFileSystem } from '@synet/fs/promises';
+
+const linodeFS = createLinodeObjectStorageFileSystem({
+  region: 'sg-sin-1',
+  bucket: 'my-linode-bucket',
+  accessKey: process.env.LINODE_ACCESS_KEY,
+  secretKey: process.env.LINODE_SECRET_KEY,
+  prefix: 'app-data/' // Optional
+});
+
+// Cost-effective file operations
+await linodeFS.writeFile('uploads/document.pdf', pdfBuffer);
+const content = await linodeFS.readFile('uploads/document.pdf');
+const stats = await linodeFS.stat('uploads/document.pdf');
+const files = await linodeFS.readDir('uploads/');
+```
+
+**Key Features**: S3-compatible API, competitive pricing, global regions, intelligent caching, automatic content type detection, virtual directory support.
 
 ---
 

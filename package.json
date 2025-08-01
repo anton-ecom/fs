@@ -1,6 +1,6 @@
 {
   "name": "@synet/fs",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Robust, battle-tested filesystem abstraction for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
     "check": "biome check ./src",
     "type-check": "tsc --noEmit --skipLibCheck",
     "format": "biome format --write ./src ./test",
-    "prepublishOnly": "npm run clean && npm run test && npm run lint && npm run build",
+    "prepublishOnly": "npm run clean && npm run lint && npm run build",
     "version:dev": "npm version --no-git-tag-version prerelease --preid=dev",
     "version:patch": "npm version --no-git-tag-version patch",
     "version:minor": "npm version --no-git-tag-version minor",

@@ -6,9 +6,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { createDigitalOceanSpacesFileSystem, type DigitalOceanSpacesOptions } from '../promises/digitalocean';
-import * as fs from 'fs';
-import * as path from 'path';
+import { createDigitalOceanSpacesFileSystem, type DigitalOceanSpacesOptions } from '../../src/promises/digitalocean';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 describe('DigitalOcean Spaces Async FileSystem', () => {
   let doFS: ReturnType<typeof createDigitalOceanSpacesFileSystem>;

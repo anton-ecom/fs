@@ -21,6 +21,7 @@ import { AsyncFileSystem } from "./promises/async-filesystem-unit";
 import type { AzureBlobStorageOptions } from "./promises/azure";
 import type { GCSFileSystemOptions } from "./promises/gcs";
 import type { GitHubFileSystemOptions } from "./promises/github";
+import type { LinodeObjectStorageFileSystemOptions } from "./promises/linode";
 import type { CloudflareR2Options } from "./promises/r2";
 import type { S3FileSystemOptions } from "./promises/s3";
 
@@ -86,6 +87,12 @@ export const FS = {
      */
     r2: (options: CloudflareR2Options) =>
       AsyncFileSystem.create({ type: "r2", options }),
+
+    /**
+     * Linode Object Storage (async) - S3-compatible object storage with proper async handling
+     */
+    linode: (options: LinodeObjectStorageFileSystemOptions) =>
+      AsyncFileSystem.create({ type: "linode", options }),
   },
 
   /**
@@ -135,6 +142,12 @@ export const FS = {
     productionR2: (r2Options: CloudflareR2Options) => FS.async.r2(r2Options),
 
     /**
+     * Production cloud: Linode Object Storage with proper async handling
+     */
+    productionLinode: (linodeOptions: LinodeObjectStorageFileSystemOptions) => 
+      FS.async.linode(linodeOptions),
+
+    /**
      * Git-based storage: GitHub with async operations
      */
     git: (githubOptions: GitHubFileSystemOptions) =>
@@ -169,4 +182,5 @@ export const FileSystems = {
   gcs: (options: GCSFileSystemOptions) => FS.async.gcs(options),
   azure: (options: AzureBlobStorageOptions) => FS.async.azure(options),
   r2: (options: CloudflareR2Options) => FS.async.r2(options),
+  linode: (options: LinodeObjectStorageFileSystemOptions) => FS.async.linode(options),
 };

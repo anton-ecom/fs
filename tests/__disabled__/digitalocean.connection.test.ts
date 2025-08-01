@@ -6,9 +6,9 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { createDigitalOceanSpacesFileSystem } from '../promises/digitalocean';
-import * as fs from 'fs';
-import * as path from 'path';
+import { createDigitalOceanSpacesFileSystem } from '../../src/promises/digitalocean';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 describe('DigitalOcean Spaces Connection Test', () => {
   test('should connect and perform basic operations', async () => {
@@ -62,7 +62,7 @@ describe('DigitalOcean Spaces Connection Test', () => {
       // Verify deletion
       const existsAfterDelete = await doFS.exists(testFile);
       expect(existsAfterDelete).toBe(false);
-      console.log(`✅ Verification successful: file deleted`);
+      console.log('✅ Verification successful: file deleted');
 
       console.log('🎉 DigitalOcean Spaces connection test passed!');
       

@@ -20,6 +20,7 @@ import {
 } from "./azure";
 import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
 import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
+import { LinodeObjectStorageFileSystem, type LinodeObjectStorageFileSystemOptions } from "./linode";
 import { MemFileSystem } from "./memory";
 import { NodeFileSystem } from "./node";
 import { CloudflareR2FileSystem, type CloudflareR2Options } from "./r2";
@@ -35,7 +36,8 @@ export type AsyncFilesystemBackendType =
   | "s3"
   | "gcs"
   | "azure"
-  | "r2";
+  | "r2"
+  | "linode";
 
 /**
  * Options for different async filesystem backends
@@ -48,6 +50,7 @@ export type AsyncFilesystemBackendOptions = {
   gcs: GCSFileSystemOptions;
   azure: AzureBlobStorageOptions;
   r2: CloudflareR2Options;
+  linode: LinodeObjectStorageFileSystemOptions;
 };
 
 /**
@@ -388,6 +391,14 @@ When learned by other units:
           throw new Error("Cloudflare R2 filesystem requires options");
         }
         return new CloudflareR2FileSystem(r2Options);
+      }
+
+      case "linode": {
+        const linodeOptions = options as AsyncFilesystemBackendOptions["linode"];
+        if (!linodeOptions) {
+          throw new Error("Linode Object Storage filesystem requires options");
+        }
+        return new LinodeObjectStorageFileSystem(linodeOptions);
       }
 
       default:

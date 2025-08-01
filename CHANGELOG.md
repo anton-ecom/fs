@@ -4,12 +4,27 @@ All notable changes to this project will be documented in this file.
 
 Most patterns are highly stable, no changes will be made to existing methods, only extended, but I will adhere to adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) just in case. You can safely upgrade, but as always, RTFM (read changelog for major releases).
 
+## [1.0.8] - 2025-07-25
+
+### ADDED
+
+ - Akamai (linode) adapter, use FS.linode()
+
+## [1.0.7] - 2025-07-25
+
+### ADDED
+
+ - Azure
+ - Google Cloud
+ - R2 (SHA-3 error on MacOs)
+ - Digital Ocean
+
 
 ## [1.0.6] - 2025-07-21
 
 ### FIXED
 
-- FileSYstem and ASyncFilesystem are now following Unit Architecture
+- FileSYstem and ASyncFileSystem are now following Unit Architecture
 - Changed dna ids - fs - for sync, and fs-async  for async operations
 - Created fs-async full test suite.
 
