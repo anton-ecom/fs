@@ -1,4 +1,4 @@
-import type { IAsyncFileSystem } from "../../../fs-github/src/filesystem.interface";
+import type { IAsyncFileSystem } from "./filesystem.interface";
 
 /**
  * Cache configuration options

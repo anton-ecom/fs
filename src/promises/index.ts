@@ -3,7 +3,6 @@
 // Asynchronous implementations
 export { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
 export { NodeFileSystem } from "./node";
-export { MemFileSystem } from "../../fs-memory/src/promises/memory";
 export {
   ObservableFileSystem,
   FilesystemEventTypes,
@@ -35,7 +34,3 @@ export {
   createCachedFileSystem,
   type CachedFileSystemOptions,
 } from "./cached";
-export {
-  GitHubFileSystem,
-  type GitHubFileSystemOptions,
-} from "../../../fs-github/src/github";

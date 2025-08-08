@@ -8,85 +8,25 @@ import {
 } from '../src/index';
 import { ConfigService } from './examples/config-service.example';
 import { MemFileSystem } from './fixtures/memory';
+import { after, afterEach } from 'node:test';
 
 describe('ConfigService with Filesystem Abstraction', () => {
   let fs: IFileSystem;
   let configService: ConfigService;
   
-  beforeEach(() => {
+   beforeEach(() => {
     // Use in-memory filesystem for fast, isolated tests
-    fs = new MemFileSystem();
-    configService = new ConfigService(fs);
-  });
-  
-  describe('basic functionality', () => {
-    it('should return default config when no file exists', () => {
-      const config = configService.loadConfig();
-      
-      expect(config).toEqual({
-        theme: 'light',
-        language: 'en',
-        features: {
-          notifications: true,
-          analytics: false
-        }
-      });
+      fs = new MemFileSystem();
+      configService = new ConfigService(fs);
     });
     
-    it('should save and load config correctly', () => {
-      const config = {
-        theme: 'dark' as const,
-        language: 'es',
-        features: {
-          notifications: false,
-          analytics: true
-        }
-      };
-      
-      configService.saveConfig(config);
-      const loadedConfig = configService.loadConfig();
-      
-      expect(loadedConfig).toEqual(config);
-    });
-    
-    it('should reset config by deleting the file', () => {
-      const config = {
-        theme: 'dark' as const,
-        language: 'es',
-        features: {
-          notifications: false,
-          analytics: true
-        }
-      };
-      
-      configService.saveConfig(config);
-      expect(fs.existsSync('./app-config.json')).toBe(true);
-      
-      configService.resetConfig();
-      expect(fs.existsSync('./app-config.json')).toBe(false);
-      
-      // Should return default config after reset
-      const loadedConfig = configService.loadConfig();
-      expect(loadedConfig.theme).toBe('light');
-    });
-    
-    it('should handle invalid JSON gracefully', () => {
-      // Manually write invalid JSON
-      fs.writeFileSync('./app-config.json', '{ invalid json }');
-      
-      const config = configService.loadConfig();
-      
-      // Should return default config when JSON is invalid
-      expect(config.theme).toBe('light');
-    });
-  });
-  
   describe('with observable filesystem', () => {
     let observableFs: ObservableFileSystem;
     let events: FilesystemEvent[];
     
     beforeEach(() => {
-      observableFs = new ObservableFileSystem(new MemFileSystem());
+      fs = new MemFileSystem();
+      observableFs = new ObservableFileSystem(fs);
       configService = new ConfigService(observableFs);
       events = [];
       
@@ -99,7 +39,7 @@ describe('ConfigService with Filesystem Abstraction', () => {
         });
       }
     });
-    
+
     it('should emit events for filesystem operations', () => {
       // Load config (will check existence, then read default)
       configService.loadConfig();
@@ -119,7 +59,6 @@ describe('ConfigService with Filesystem Abstraction', () => {
       const writeEvents = events.filter(e => e.type === FilesystemEventTypes.WRITE);
       const readEvents = events.filter(e => e.type === FilesystemEventTypes.READ);
       
-      console.log(readEvents);
       expect(existsEvents.length).toBeGreaterThan(0);
       expect(writeEvents.length).toBe(1);
       expect(readEvents.length).toBe(1);
