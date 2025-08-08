@@ -2,12 +2,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { 
   type IFileSystem, 
-  MemFileSystem, 
   ObservableFileSystem, 
   FilesystemEventTypes,
   type FilesystemEvent
 } from '../src/index';
-import { ConfigService } from './config-service.example';
+import { ConfigService } from './examples/config-service.example';
+import { MemFileSystem } from './fixtures/memory';
 
 describe('ConfigService with Filesystem Abstraction', () => {
   let fs: IFileSystem;
@@ -119,6 +119,7 @@ describe('ConfigService with Filesystem Abstraction', () => {
       const writeEvents = events.filter(e => e.type === FilesystemEventTypes.WRITE);
       const readEvents = events.filter(e => e.type === FilesystemEventTypes.READ);
       
+      console.log(readEvents);
       expect(existsEvents.length).toBeGreaterThan(0);
       expect(writeEvents.length).toBe(1);
       expect(readEvents.length).toBe(1);

@@ -3,7 +3,6 @@
  */
 
 import { FS } from '../src/fs';
-import { demonstrateIdentityPersistence } from './identity-persistence-demo';
 
 /**
  * Demo: Node filesystem for local development and testing

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { JsonFileSystem, JsonParseError, JsonStringifyError, JsonValidationError } from '../promises/json';
-import { MemFileSystem } from '../promises/memory';
+import { JsonFileSystem, JsonParseError, JsonStringifyError, JsonValidationError } from '../src/promises/json';
+import { MemFileSystem } from './fixtures/async-memory';
 
 interface TestConfig {
   name: string;

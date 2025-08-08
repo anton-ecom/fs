@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { WithIdFileSystem, FileFormat, type FileMetadata } from '../promises/with-id';
-import { MemFileSystem } from '../promises/memory';
+import { WithIdFileSystem, FileFormat, type FileMetadata } from '../src/with-id';
+import { MemFileSystem } from './fixtures/memory';
 
-describe('WithIdFileSystem (Async)', () => {
+describe('WithIdFileSystem (Sync)', () => {
   let memFs: MemFileSystem;
   let withIdFs: WithIdFileSystem;
 
@@ -59,102 +59,102 @@ describe('WithIdFileSystem (Async)', () => {
   });
 
   describe('file operations', () => {
-    it('should write and read files using original paths', async () => {
+    it('should write and read files using original paths', () => {
       const content = '{"name": "John", "age": 30}';
       const filePath = './vault/profiles/user1.json';
       
-      await withIdFs.writeFile(filePath, content);
-      const readContent = await withIdFs.readFile(filePath);
+      withIdFs.writeFileSync(filePath, content);
+      const readContent = withIdFs.readFileSync(filePath);
       
       expect(readContent).toBe(content);
-      expect(await withIdFs.exists(filePath)).toBe(true);
+      expect(withIdFs.existsSync(filePath)).toBe(true);
     });
 
-    it('should store files with ID-based names in underlying filesystem', async () => {
+    it('should store files with ID-based names in underlying filesystem', () => {
       const content = 'Hello World';
       const filePath = './test.txt';
       
-      await withIdFs.writeFile(filePath, content);
+      withIdFs.writeFileSync(filePath, content);
       
       const metadata = withIdFs.getMetadata(filePath);
       
       // Check that file exists in underlying filesystem with stored path
-      expect(await memFs.exists(metadata.storedPath)).toBe(true);
-      expect(await memFs.readFile(metadata.storedPath)).toBe(content);
+      expect(memFs.existsSync(metadata.storedPath)).toBe(true);
+      expect(memFs.readFileSync(metadata.storedPath)).toBe(content);
       
       // Original path should not exist in underlying filesystem
-      expect(await memFs.exists(filePath)).toBe(false);
+      expect(memFs.existsSync(filePath)).toBe(false);
     });
 
-    it('should delete files and clean up metadata', async () => {
+    it('should delete files and clean up metadata', () => {
       const filePath = './test.txt';
-      await withIdFs.writeFile(filePath, 'content');
+      withIdFs.writeFileSync(filePath, 'content');
       
       const metadata = withIdFs.getMetadata(filePath);
       const { id, alias } = metadata;
       
-      expect(await withIdFs.exists(filePath)).toBe(true);
+      expect(withIdFs.existsSync(filePath)).toBe(true);
       expect(withIdFs.listTrackedFiles()).toHaveLength(1);
       
-      await withIdFs.deleteFile(filePath);
+      withIdFs.deleteFileSync(filePath);
       
-      expect(await withIdFs.exists(filePath)).toBe(false);
+      expect(withIdFs.existsSync(filePath)).toBe(false);
       expect(withIdFs.listTrackedFiles()).toHaveLength(0);
       
       // Metadata should be cleaned up
-      await expect(withIdFs.getByIdOrAlias(id)).rejects.toThrow('File not found');
-      await expect(withIdFs.getByIdOrAlias(alias)).rejects.toThrow('File not found');
+      expect(() => withIdFs.getByIdOrAlias(id)).toThrow('File not found');
+      expect(() => withIdFs.getByIdOrAlias(alias)).toThrow('File not found');
     });
   });
 
   describe('ID and alias access', () => {
-    it('should read files by ID', async () => {
+    it('should read files by ID', () => {
       const content = '{"user": "data"}';
       const filePath = './vault/profiles/user1.json';
       
-      await withIdFs.writeFile(filePath, content);
+      withIdFs.writeFileSync(filePath, content);
       const id = withIdFs.getId(filePath);
       
-      const readContent = await withIdFs.getByIdOrAlias(id);
+      const readContent = withIdFs.getByIdOrAlias(id);
       expect(readContent).toBe(content);
     });
 
-    it('should read files by alias', async () => {
+    it('should read files by alias', () => {
       const content = 'Configuration data';
       const filePath = './config/app.txt';
       
-      await withIdFs.writeFile(filePath, content);
+      withIdFs.writeFileSync(filePath, content);
       const alias = withIdFs.getAlias(filePath);
       
-      const readContent = await withIdFs.getByIdOrAlias(alias);
+      const readContent = withIdFs.getByIdOrAlias(alias);
       expect(readContent).toBe(content);
     });
 
-    it('should validate file format when specified', async () => {
+    it('should validate file format when specified', () => {
       const jsonContent = '{"valid": "json"}';
       const filePath = './data.json';
       
-      await withIdFs.writeFile(filePath, jsonContent);
+      withIdFs.writeFileSync(filePath, jsonContent);
       const id = withIdFs.getId(filePath);
       
       // Should work with correct format
-      await expect(withIdFs.getByIdOrAlias(id, FileFormat.JSON)).resolves.toBe(jsonContent);
+      expect(() => withIdFs.getByIdOrAlias(id, FileFormat.JSON)).not.toThrow();
       
       // Should throw with wrong format
-      await expect(withIdFs.getByIdOrAlias(id, FileFormat.PDF)).rejects.toThrow('File format mismatch');
+      expect(() => withIdFs.getByIdOrAlias(id, FileFormat.PDF)).toThrow('File format mismatch');
     });
 
-    it('should throw error for non-existent ID or alias', async () => {
-      await expect(withIdFs.getByIdOrAlias('nonexistent')).rejects.toThrow('File not found');
-      await expect(withIdFs.getByIdOrAlias('fake-id-12345')).rejects.toThrow('File not found');
+    it('should throw error for non-existent ID or alias', () => {
+      expect(() => withIdFs.getByIdOrAlias('nonexistent')).toThrow('File not found');
+      expect(() => withIdFs.getByIdOrAlias('fake-id-12345')).toThrow('File not found');
     });
   });
 
   describe('metadata management', () => {
-    it('should track multiple files', async () => {
-      await withIdFs.writeFile('./file1.txt', 'content1');
-      await withIdFs.writeFile('./dir/file2.json', '{"data": 2}');
-      await withIdFs.writeFile('./file3.md', '# Header');
+    it('should track multiple files', () => {
+      withIdFs.writeFileSync('./file1.txt', 'content1');
+      withIdFs.writeFileSync('./dir/file2.json', '{"data": 2}');
+      withIdFs.writeFileSync('./file3.md', '# Header');
       
       const trackedFiles = withIdFs.listTrackedFiles();
       expect(trackedFiles).toHaveLength(3);
@@ -165,9 +165,9 @@ describe('WithIdFileSystem (Async)', () => {
       expect(paths).toContain('./file3.md');
     });
 
-    it('should provide complete metadata', async () => {
+    it('should provide complete metadata', () => {
       const filePath = './vault/profiles/user1.json';
-      await withIdFs.writeFile(filePath, '{}');
+      withIdFs.writeFileSync(filePath, '{}');
       
       const metadata = withIdFs.getMetadata(filePath);
       
@@ -193,26 +193,26 @@ describe('WithIdFileSystem (Async)', () => {
   });
 
   describe('directory operations', () => {
-    it('should handle directory deletion with metadata cleanup', async () => {
-      await withIdFs.writeFile('./dir/file1.txt', 'content1');
-      await withIdFs.writeFile('./dir/subdir/file2.txt', 'content2');
-      await withIdFs.writeFile('./other/file3.txt', 'content3');
+    it('should handle directory deletion with metadata cleanup', () => {
+      withIdFs.writeFileSync('./dir/file1.txt', 'content1');
+      withIdFs.writeFileSync('./dir/subdir/file2.txt', 'content2');
+      withIdFs.writeFileSync('./other/file3.txt', 'content3');
       
       expect(withIdFs.listTrackedFiles()).toHaveLength(3);
       
-      await withIdFs.deleteDir('./dir');
+      withIdFs.deleteDirSync('./dir');
       
       const remaining = withIdFs.listTrackedFiles();
       expect(remaining).toHaveLength(1);
       expect(remaining[0].originalPath).toBe('./other/file3.txt');
     });
 
-    it('should delegate directory operations to base filesystem', async () => {
-      await withIdFs.ensureDir('./testdir');
-      expect(await memFs.exists('./testdir')).toBe(true);
+    it('should delegate directory operations to base filesystem', () => {
+      withIdFs.ensureDirSync('./testdir');
+      expect(memFs.existsSync('./testdir')).toBe(true);
       
-      await withIdFs.writeFile('./testdir/file.txt', 'content');
-      const dirs = await withIdFs.readDir('./testdir');
+      withIdFs.writeFileSync('./testdir/file.txt', 'content');
+      const dirs = withIdFs.readDirSync('./testdir');
       
       // Should contain the stored file name
       expect(dirs).toHaveLength(1);
@@ -221,38 +221,38 @@ describe('WithIdFileSystem (Async)', () => {
   });
 
   describe('filesystem interface compliance', () => {
-    it('should implement all IAsyncFileSystem methods', async () => {
+    it('should implement all IFileSystem methods', () => {
       const filePath = './test.txt';
       const content = 'test content';
       
       // Write and read
-      await withIdFs.writeFile(filePath, content);
-      expect(await withIdFs.readFile(filePath)).toBe(content);
+      withIdFs.writeFileSync(filePath, content);
+      expect(withIdFs.readFileSync(filePath)).toBe(content);
       
       // Exists
-      expect(await withIdFs.exists(filePath)).toBe(true);
-      expect(await withIdFs.exists('./nonexistent.txt')).toBe(false);
+      expect(withIdFs.existsSync(filePath)).toBe(true);
+      expect(withIdFs.existsSync('./nonexistent.txt')).toBe(false);
       
       // Directory operations
-      await withIdFs.ensureDir('./newdir');
-      expect(await memFs.exists('./newdir')).toBe(true);
+      withIdFs.ensureDirSync('./newdir');
+      expect(memFs.existsSync('./newdir')).toBe(true);
       
       // Chmod (should delegate to stored path)
-      await expect(withIdFs.chmod(filePath, 0o755)).resolves.not.toThrow();
+      expect(() => withIdFs.chmodSync(filePath, 0o755)).not.toThrow();
       
       // Delete
-      await withIdFs.deleteFile(filePath);
-      expect(await withIdFs.exists(filePath)).toBe(false);
+      withIdFs.deleteFileSync(filePath);
+      expect(withIdFs.existsSync(filePath)).toBe(false);
     });
 
-    it('should handle clear operation if available', async () => {
-      await withIdFs.writeFile('./dir/file1.txt', 'content1');
-      await withIdFs.writeFile('./dir/file2.txt', 'content2');
+    it('should handle clear operation if available', () => {
+      withIdFs.writeFileSync('./dir/file1.txt', 'content1');
+      withIdFs.writeFileSync('./dir/file2.txt', 'content2');
       
       expect(withIdFs.listTrackedFiles()).toHaveLength(2);
       
       if (withIdFs.clear) {
-        await withIdFs.clear('./dir');
+        withIdFs.clear('./dir');
         
         // Should clean up metadata for cleared directory
         const remaining = withIdFs.listTrackedFiles().filter(f => 
@@ -277,9 +277,9 @@ describe('WithIdFileSystem (Async)', () => {
       expect(alias1).toBe(alias2);
     });
 
-    it('should handle files with no extension', async () => {
+    it('should handle files with no extension', () => {
       const filePath = './README';
-      await withIdFs.writeFile(filePath, 'content');
+      withIdFs.writeFileSync(filePath, 'content');
       
       const metadata = withIdFs.getMetadata(filePath);
       expect(metadata.format).toBe(FileFormat.TXT);

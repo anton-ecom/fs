@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.0.9
+version: v.1.1.0
 description: Files are artefacts of identity
 ```
 
@@ -38,58 +38,6 @@ npm i @synet/fs
 ## Overview
 
 This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released).
-
-## In package
-
-- **NodeFilesystem** - Standard Wrapper of node:fs and node:fs/promises
-- **Memory** - memfs - In-memory filesystem for testing
-- **Observable** - observe any IFileSystem events with EventEmitter/Observer pattern
-- **JsonFileSystem** - Type-safe JSON file operations with automatic parsing/stringification
-- **AnalyticsFileSystem** - Filesystem analytics and usage tracking with configurable event emission
-- **WithIdFileSystem** - Smart file storage with deterministic IDs and human-readable aliases
-- **CachedFileSystem** - Lightning-fast file operations with intelligent LRU caching and TTL expiration
-
-
-## Cloud Storage Integrations
-
-- **GitHubFileSystem** - Version-controlled file storage using GitHub repositories with automatic commit and sync
-- **S3FileSystem** - AWS S3 cloud storage with local filesystem interface and intelligent caching
-- **AzureBlobFileSystem** - Microsoft Azure Blob Storage with local filesystem interface and intelligent caching
-- **GoogleCloudFileSystem** - Google Cloud Storage with seamless file operations and automatic authentication
-- **DigitalOceanSpacesFileSystem** - DigitalOcean Spaces (S3-compatible) storage with global CDN integration
-- **CloudflareR2FileSystem** - Cloudflare R2 storage with zero egress fees and global edge distribution
-- **LinodeObjectStorageFileSystem** - Linode Object Storage (S3-compatible) with global edge distribution and competitive pricing
-
-## Coming soon:
-
-- Encrypted - Transparent encryption/decryption
-- ACL - Security controlled - Control who can access the files
-- Signed - Files signed by Verifiable Credentials and verified on read.
-- IPFS - IPFS distributed storage
-- WebDav - WebDAV protocol support
-- Compressed - Transparent compression
-- Batch - Batch operations for performance
-- Replay - Record and replay operations
-- Mocked - Advanced mocking with scenarios
-- Metrics - Detailed performance metrics
-- Audits - Keep logging of every write/read events.
-- Analytics - keep detailed analytics of access and actions (remotely with realtime event/broker)
-- Versioned - simplified git
-- Synced - keep localfiles, but sync them to S3.
-- Conflic Resolution - automatical locks/wait/release
-- Hashed - store by hash (git like)
-- Steam (FAT) - save and retreive files of any size
-- Resilient - Intelligent filesystem with retries.
-- Meta - store files with rich metadata, quickly list/find files by meta keys.
-- Paid - lock/unlock files/folders for users with NKeys or by issuing DID VCs, via event observer. Verifiable proof and with selective disclosure.
-- Unique - write same files, with each storing its historical context.
-- Auto-backup - automatically back-up your files with versions.
-- High Security File System (@HSFS) - Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why. Mark classified files, protect access through 2FA/VC/NKeys.
-
-**Distributed**:
-
-- DHT - custom distributed filesystem.
-- File-sharing - automatically share selected files to all your services via DHT/IPFS.
 
 ## Why Use This Over Traditional `fs`?
 
@@ -229,29 +177,13 @@ class AsyncConfigService {
 
 **Keep Zalgo locked away** - your components are predictable, your consumers know exactly what to expect, types enforce right behaviour on compile time.
 
-## FS Pattern - The Clean Factory
-
-The **FS Pattern** is a filesystem factory that provides a clean, intuitive way to create filesystem units with clear separation between sync and async operations. 
-
-### `FS.async.node()`
-
-```typescript
-import { FS } from '@synet/fs';
-
-// ✨ The beautiful simplicity:
-const syncFs = FS.sync.memory();      // Synchronous in-memory filesystem
-const asyncFs = FS.async.s3(options); // Asynchronous S3 filesystem
-const linodeFs = FS.async.linode(linodeOptions); // Asynchronous Linode Object Storage
-const devFs = FS.presets.development(); // Quick development setup
-```
-
 ### FileSystem and AsyncFileSystem Units
 
 The FS pattern is built on two foundational **Units** that follow the Unit Architecture and Unit Driven Design best practices:
 
 #### FileSystem Unit (Sync)
 ```typescript
-import { FileSystem } from '@synet/fs';
+import { FileSystem, NodeFileSystem } from '@synet/fs';
 
 const syncUnit = FileSystem.create({ type: "memory" });
 const content = syncUnit.readFile('./file.txt'); // Returns string directly
@@ -259,79 +191,11 @@ const content = syncUnit.readFile('./file.txt'); // Returns string directly
 
 #### AsyncFileSystem Unit (Async)
 ```typescript
-import { AsyncFileSystem } from '@synet/fs';
+import { AsyncFileSystem, NodeFileSystem } from '@synet/fs/promises';
 
 const asyncUnit = AsyncFileSystem.create({ type: "azure", options: azureConfig });
 const content = await asyncUnit.readFile('./file.txt'); // Returns Promise<string>
 ```
-
-### FS Factory Organization
-
-The **FS pattern** organizes all filesystem operations into logical namespaces:
-
-```typescript
-export const FS = {
-  // Synchronous operations
-  sync: {
-    memory: () => FileSystem.create({ type: "memory" }),
-    node: () => FileSystem.create({ type: "node" }),
-  },
-  
-  // Asynchronous operations  
-  async: {
-    memory: () => AsyncFileSystem.create({ type: "memory" }),   
-    node: () => AsyncFileSystem.create({ type: "node" }),
-    s3: () => AsyncFileSystem.create({ type: "s3" }),
-    github: () => AsyncFileSystem.create({ type: "github" }),
-    azure: (options) => AsyncFileSystem.create({ type: "azure", options }),
-    google: (options) => AsyncFileSystem.create({ type: "google", options }),
-    digitalocean: (options) => AsyncFileSystem.create({ type: "digitalocean", options }),
-    r2: (options) => AsyncFileSystem.create({ type: "r2", options }),
-    linode: (options) => AsyncFileSystem.create({ type: "linode", options }),
-  },
-  
-  // Quick presets for common scenarios
-  presets: {
-    development: () => FS.sync.memory(),
-    developmentAsync: () => FS.async.memory(),
-    local: () => FS.sync.node(),
-    localAsync: () => FS.async.node(),
-    production: (cloudOptions) => FS.async.azure(cloudOptions), // or google, digitalocean, r2, linode
-  }
-};
-```
-
-### Why This Pattern ?
-
-1. ** Clear Intent**: `FS.async.node()` tells you exactly what you're getting
-2. ** No Zalgo**: Impossible to mix sync/async in one component  
-3. ** Zero Confusion**: The API guides you to the right choice
-4. ** Composable**: Built on Unit Architecture for infinite extension
-5. ** Type Safety**: TypeScript enforces correct usage patterns
-
-### Usage Examples
-
-```typescript
-// Development: Fast in-memory testing
-const devFs = FS.presets.development();
-devFs.writeFile('test.txt', 'Hello World');
-
-// Production: Scalable cloud storage
-const prodFs = FS.presets.production({
-  region: 'us-east-1',
-  bucket: 'my-app-storage',
-  prefix: 'synet-demo/',  // Optional: acts as root directory
-  accessKeyId: '',   // Or use AWS profile/IAM role
-  secretAccessKey: '',   // Or use AWS profile/IAM role
-});
-await prodFs.writeFile('data.json', JSON.stringify(data));
-
-// Local development with async patterns
-const localAsync = FS.async.node();
-await localAsync.ensureDir('./uploads');
-```
-
-**This is the foundation pattern that enables your zero-dependency, composable architecture.**
 
 ## Available Implementations
 
@@ -351,11 +215,11 @@ In-memory filesystem for testing:
 
 ```typescript
 // Synchronous
-import { MemFileSystem } from '@synet/fs';
+import { MemFileSystem } from '@synet/fs-memory';
 const memFs = new MemFileSystem();
 
 // Asynchronous
-import { MemFileSystem } from '@synet/fs/promises/memory';
+import { MemFileSystem } from '@synet/fs-memory/promises/memory';
 const asyncMemFs = new MemFileSystem();
 ```
 
@@ -365,10 +229,10 @@ The `ObservableFileSystem` wraps any base filesystem and emits events for monito
 
 ```typescript
 // Synchronous Observable
-import { ObservableFileSystem, FilesystemEventTypes } from '@synet/fs';
+import { ObservableFileSystem, FilesystemEventTypes, NodeFileSystem } from '@synet/fs';
 
-// Asynchronous Observable
-import { ObservableFileSystem } from '@synet/fs';
+// Or Async Observable
+import { ObservableFileSystem, NodeFileSystem} from '@synet/fs/promises';
 
 // Monitor specific operations
 const observableFs = new ObservableFileSystem(

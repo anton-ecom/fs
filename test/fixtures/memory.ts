@@ -1,5 +1,5 @@
 import { fs as memfs } from "memfs";
-import type { FileStats, IFileSystem } from "./filesystem.interface";
+import type { FileStats, IFileSystem } from "../../src/filesystem.interface";
 /**
  * In-memory file system implementation using memfs
  */

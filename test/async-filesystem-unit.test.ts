@@ -4,13 +4,16 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AsyncFileSystem } from '../promises/async-filesystem.unit.js';
+import { AsyncFileSystem } from '../src/promises/async-filesystem.unit';
+import { MemFileSystem } from './fixtures/async-memory';
+
+
 
 describe('AsyncFileSystem', () => {
   describe('CREATE', () => {
     it('should create unit with memory backend', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       expect(unit).toBeDefined();
@@ -19,7 +22,7 @@ describe('AsyncFileSystem', () => {
 
     it('should create unit with node backend', () => {
       const unit = AsyncFileSystem.create({
-        type: 'node'
+        adapter: new MemFileSystem()
       });
 
       expect(unit).toBeDefined();
@@ -28,17 +31,11 @@ describe('AsyncFileSystem', () => {
 
     it('should initialize with zero operation stats', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
     });
 
-    it('should initialize with configuration', () => {
-      const unit = AsyncFileSystem.create({
-        type: 'memory'
-      });
-
-      expect(unit.getBackendType()).toBe('memory');
 
     });
   });
@@ -48,7 +45,7 @@ describe('AsyncFileSystem', () => {
 
     beforeEach(() => {
       unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
     });
 
@@ -116,7 +113,7 @@ describe('AsyncFileSystem', () => {
   describe('TEACH', () => {
     it('should provide complete async filesystem teaching contract', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const contract = unit.teach();
@@ -139,7 +136,7 @@ describe('AsyncFileSystem', () => {
 
     it('should provide async-specific namespaced capabilities', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const contract = unit.teach();
@@ -151,7 +148,7 @@ describe('AsyncFileSystem', () => {
 
     it('should execute taught capabilities correctly', async () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const contract = unit.teach();
@@ -169,7 +166,7 @@ describe('AsyncFileSystem', () => {
   describe('LEARN', () => {
     it('should maintain learning capability for Unit Architecture', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       // AsyncFileSystem should be able to learn from other units
@@ -179,11 +176,11 @@ describe('AsyncFileSystem', () => {
 
     it('should preserve learned capabilities alongside native ones', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       // Create a proper v1.0.7 TeachingContract with consciousness trinity
-      const mockUnit = AsyncFileSystem.create({ type: 'memory' });
+      const mockUnit = AsyncFileSystem.create({ adapter: new MemFileSystem() });
       const mockContract = mockUnit.teach(); // Use real consciousness trinity structure
       
       unit.learn([mockContract]);
@@ -200,7 +197,7 @@ describe('AsyncFileSystem', () => {
   describe('Unit Architecture Compliance', () => {
     it('should have proper DNA identity', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       expect(unit.dna.id).toBe('fs-async');
@@ -209,7 +206,7 @@ describe('AsyncFileSystem', () => {
 
     it('should provide comprehensive help documentation', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       unit.help();
@@ -218,7 +215,7 @@ describe('AsyncFileSystem', () => {
 
     it('should provide identity through whoami', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const identity = unit.whoami();
@@ -227,7 +224,7 @@ describe('AsyncFileSystem', () => {
 
     it('should track capabilities correctly', () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const capabilities = unit.capabilities();
@@ -245,7 +242,7 @@ describe('AsyncFileSystem', () => {
   describe('Error Handling & Resilience', () => {
     it('should handle non-existent file reads gracefully', async () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       await expect(unit.readFile('/non-existent.txt')).rejects.toThrow();
@@ -254,7 +251,7 @@ describe('AsyncFileSystem', () => {
 
     it('should handle invalid directory operations', async () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       // Try to read non-existent directory
@@ -267,7 +264,7 @@ describe('AsyncFileSystem', () => {
   describe('Backend Integration', () => {
     it('should work with memory backend', async () => {
       const unit = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       await unit.writeFile('/memory-test.txt', 'memory content');
@@ -275,25 +272,18 @@ describe('AsyncFileSystem', () => {
       expect(content).toBe('memory content');
     });
 
-    it('should provide backend information', () => {
-      const unit = AsyncFileSystem.create({
-        type: 'memory'
-      });
 
-      expect(unit.getBackendType()).toBe('memory');
-      expect(unit.getBackend()).toBeDefined();
-    });
   });
 
 
   describe('Integration with Unit Ecosystem', () => {
     it('should be compatible with Unit learning protocols', () => {
       const unit1 = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const unit2 = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       // Units should be able to teach/learn from each other
@@ -307,11 +297,11 @@ describe('AsyncFileSystem', () => {
 
     it('should maintain separate operation statistics between units', async () => {
       const unit1 = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       const unit2 = AsyncFileSystem.create({
-        type: 'memory'
+        adapter: new MemFileSystem()
       });
 
       // Operations on unit1 shouldn't affect unit2's statistics
@@ -320,12 +310,12 @@ describe('AsyncFileSystem', () => {
  
     });
   });
-});
+
 
 describe('AsyncFileSystem vs FileSystem Compatibility', () => {
   it('should provide equivalent functionality to sync FileSystem', async () => {
     const asyncUnit = AsyncFileSystem.create({
-      type: 'memory'
+      adapter: new MemFileSystem()
     });
 
     // AsyncFileSystem should provide same core functionality
@@ -344,7 +334,7 @@ describe('AsyncFileSystem vs FileSystem Compatibility', () => {
 
   it('should have consistent capability naming with fs-async namespace', () => {
     const asyncUnit = AsyncFileSystem.create({
-      type: 'memory'
+      adapter: new MemFileSystem()
     });
 
     const contract = asyncUnit.teach();

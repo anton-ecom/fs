@@ -2,11 +2,11 @@
 import { 
   type IFileSystem, 
   NodeFileSystem, 
-  MemFileSystem, 
   ObservableFileSystem, 
   FilesystemEventTypes,
   type FilesystemEvent
-} from '../src/index';
+} from '../../src/index';
+import { MemFileSystem } from '../fixtures/memory';
 
 interface AppConfig {
   theme: 'light' | 'dark';

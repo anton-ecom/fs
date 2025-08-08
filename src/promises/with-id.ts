@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import path from "node:path";
-import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
+import type { FileStats, IAsyncFileSystem } from "../../../fs-github/src/filesystem.interface";
 
 /**
  * Supported file formats for ID-based file operations

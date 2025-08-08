@@ -6,65 +6,23 @@
  */
 
 import {
-  type TeachingContract,
-  Unit,
-  type UnitCore,
-  type UnitProps,
-  UnitSchema,
+  Unit, 
   createUnitSchema,
   Capabilities,
   Schema,
-  Validator
+  Validator,
+  type TeachingContract,
+  type UnitCore,
+  type UnitProps,
 } from "@synet/unit";
 import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
-import {
-  AzureBlobStorageFileSystem,
-  type AzureBlobStorageOptions,
-} from "./azure";
-import { GCSFileSystem, type GCSFileSystemOptions } from "./gcs";
-import { GitHubFileSystem, type GitHubFileSystemOptions } from "./github";
-import { LinodeObjectStorageFileSystem, type LinodeObjectStorageFileSystemOptions } from "./linode";
-import { MemFileSystem } from "./memory";
-import { NodeFileSystem } from "./node";
-import { CloudflareR2FileSystem, type CloudflareR2Options } from "./r2";
-import { S3FileSystem, type S3FileSystemOptions } from "./s3";
-
-/**
- * Supported async filesystem backend types
- */
-export type AsyncFilesystemBackendType =
-  | "node"
-  | "memory"
-  | "github"
-  | "s3"
-  | "gcs"
-  | "azure"
-  | "r2"
-  | "linode";
-
-/**
- * Options for different async filesystem backends
- */
-export type AsyncFilesystemBackendOptions = {
-  node: Record<string, never>;
-  memory: Record<string, never>;
-  github: GitHubFileSystemOptions;
-  s3: S3FileSystemOptions;
-  gcs: GCSFileSystemOptions;
-  azure: AzureBlobStorageOptions;
-  r2: CloudflareR2Options;
-  linode: LinodeObjectStorageFileSystemOptions;
-};
 
 /**
  * Async filesystem creation configuration
  */
-export interface AsyncFilesystemConfig<
-  T extends AsyncFilesystemBackendType = AsyncFilesystemBackendType,
-> {
-  type: T;
-  options?: AsyncFilesystemBackendOptions[T];
+export interface AsyncFilesystemConfig {
+  adapter: IAsyncFileSystem; 
 }
 
 /**
@@ -73,11 +31,7 @@ export interface AsyncFilesystemConfig<
 interface AsyncFileSystemProps extends UnitProps {
   backend: IAsyncFileSystem;
   config: AsyncFilesystemConfig;
-  operations: {
-    reads: number;
-    writes: number;
-    errors: number;
-  };
+
 }
 
 const VERSION = "1.0.9";
@@ -259,7 +213,29 @@ export class AsyncFileSystem
     return { capabilities, schema, validator };
   }
 
+
+
   /**
+   * CREATE - Create a new async Filesystem Unit
+   */
+  static create(
+    config: AsyncFilesystemConfig,
+  ): AsyncFileSystem {
+
+    const props: AsyncFileSystemProps = {
+      dna: createUnitSchema({
+        id: "fs-async",
+        version: VERSION,
+      }),
+      backend: config.adapter,
+      config,
+      created: new Date(),
+    };
+
+    return new AsyncFileSystem(props);
+  }
+
+    /**
    * Get capabilities consciousness - returns living instance
    */
   capabilities(): Capabilities {
@@ -281,43 +257,14 @@ export class AsyncFileSystem
   }
 
   /**
-   * CREATE - Create a new async Filesystem Unit
-   */
-  static create<T extends AsyncFilesystemBackendType>(
-    config: AsyncFilesystemConfig<T>,
-  ): AsyncFileSystem {
-    const backend = AsyncFileSystem.createBackend(config);
-
-    const props: AsyncFileSystemProps = {
-      dna: createUnitSchema({
-        id: "fs-async",
-        version: VERSION,
-      }),
-      backend,
-      config,
-      operations: {
-        reads: 0,
-        writes: 0,
-        errors: 0,
-      },
-      created: new Date(),
-    };
-
-    return new AsyncFileSystem(props);
-  }
-
-  /**
    * Normalize path for backend compatibility
 
    */
   private normalizePath(path: string): string {
     // Memory backend requires absolute paths
-    if (this.props.config.type === "memory") {
-      return path.startsWith("/") ? path : `/${path}`;
-    }
 
-    // Node, S3, GitHub handle paths natively
-    return path;
+    return path.startsWith("/") ? path : `/${path}`;
+
   }
 
   // ==========================================
@@ -356,7 +303,6 @@ export class AsyncFileSystem
       const normalizedPath = this.normalizePath(path);
       await this.props.backend.deleteFile(normalizedPath);
     } catch (error) {
-      this.props.operations.errors++;
       throw error;
     }
   }
@@ -401,7 +347,7 @@ export class AsyncFileSystem
     const result = await this.props.backend.stat?.(normalizedPath);
     if (!result) {
       throw new Error(
-        `stat method not available on ${this.props.config.type} backend`,
+        `stat method not available on this backend`,
       );
     }
     return result;
@@ -413,7 +359,7 @@ export class AsyncFileSystem
   async clear(dirPath: string): Promise<void> {
     if (!this.props.backend.clear) {
       throw new Error(
-        `clear method not available on ${this.props.config.type} backend`,
+        `clear method not available on this backend`,
       );
     }
     const normalizedPath = this.normalizePath(dirPath);
@@ -471,16 +417,7 @@ When learned by other units:
   /**
    * Get operation statistics
    */
-  getStats() {
-    return { ...this.props.operations };
-  }
 
-  /**
-   * Get backend type
-   */
-  getBackendType() {
-    return this.props.config.type;
-  }
 
   /**
    * Get configuration
@@ -496,124 +433,9 @@ When learned by other units:
     return this.props.backend;
   }
 
-  /**
-   * Create a new AsyncFileSystem unit with different backend configuration
-   * Unit Architecture pattern: create new instance instead of mutation
-   */
-  withBackend<T extends AsyncFilesystemBackendType>(
-    config: AsyncFilesystemConfig<T>,
-  ): AsyncFileSystem {
-    return AsyncFileSystem.create(config);
-  }
-
-  /**
-   * Create a specific async filesystem backend
-   */
-  private static createBackend<T extends AsyncFilesystemBackendType>(
-    config: AsyncFilesystemConfig<T>,
-  ): IAsyncFileSystem {
-    const { type, options } = config;
-
-    switch (type) {
-      case "node":
-        return new NodeFileSystem();
-
-      case "memory":
-        return new MemFileSystem();
-
-      case "github": {
-        const githubOptions =
-          options as AsyncFilesystemBackendOptions["github"];
-        if (!githubOptions) {
-          throw new Error("GitHub filesystem requires options");
-        }
-        return new GitHubFileSystem(githubOptions);
-      }
-
-      case "s3": {
-        const s3Options = options as AsyncFilesystemBackendOptions["s3"];
-        if (!s3Options) {
-          throw new Error("S3 filesystem requires options");
-        }
-        return new S3FileSystem(s3Options);
-      }
-
-      case "gcs": {
-        const gcsOptions = options as AsyncFilesystemBackendOptions["gcs"];
-        if (!gcsOptions) {
-          throw new Error("GCS filesystem requires options");
-        }
-        return new GCSFileSystem(gcsOptions);
-      }
-
-      case "azure": {
-        const azureOptions = options as AsyncFilesystemBackendOptions["azure"];
-        if (!azureOptions) {
-          throw new Error("Azure Blob Storage filesystem requires options");
-        }
-        return new AzureBlobStorageFileSystem(azureOptions);
-      }
-
-      case "r2": {
-        const r2Options = options as AsyncFilesystemBackendOptions["r2"];
-        if (!r2Options) {
-          throw new Error("Cloudflare R2 filesystem requires options");
-        }
-        return new CloudflareR2FileSystem(r2Options);
-      }
-
-      case "linode": {
-        const linodeOptions = options as AsyncFilesystemBackendOptions["linode"];
-        if (!linodeOptions) {
-          throw new Error("Linode Object Storage filesystem requires options");
-        }
-        return new LinodeObjectStorageFileSystem(linodeOptions);
-      }
-
-      default:
-        throw new Error(`Unsupported async filesystem backend: ${type}`);
-    }
-  }
-
   isAsync(): boolean {
     return true; // This unit is always async
   }
 
-  getUsagePattern() {
-    return {
-      reads: this.props.operations.reads,
-      backendType: this.props.config.type,
-      totalOperations:
-        this.props.operations.reads + this.props.operations.writes,
-      readWriteRatio:
-        this.props.operations.writes > 0
-          ? this.props.operations.reads / this.props.operations.writes
-          : this.props.operations.reads,
-      errorRate:
-        this.props.operations.errors /
-          (this.props.operations.reads + this.props.operations.writes) || 0,
-    };
-  }
-
-  getErrorPatterns() {
-    return {
-      totalErrors: this.props.operations.errors,
-      suggestion:
-        this.props.operations.errors > 10
-          ? `Consider switching from ${this.props.config.type} backend`
-          : "System running smoothly",
-      backendType: this.props.config.type,
-    };
-  }
-
-  getPerformanceInsights() {
-    return {
-      backendType: this.props.config.type,
-      isAsync: this.isAsync(),
-      recommendation:
-        this.props.operations.reads + this.props.operations.writes > 1000
-          ? "Consider optimizing your filesystem usage"
-          : "System performing well",
-    };
-  }
+  
 }

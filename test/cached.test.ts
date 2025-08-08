@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CachedFileSystem, createCachedFileSystem, type CachedFileSystemOptions } from '../cached';
-import { MemFileSystem } from '../memory';
+import { CachedFileSystem, createCachedFileSystem, type CachedFileSystemOptions } from '../src/cached';
+import { MemFileSystem } from './fixtures/memory';
 
 describe('CachedFileSystem (Sync)', () => {
   let memFs: MemFileSystem;

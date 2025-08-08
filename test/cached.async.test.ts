@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CachedFileSystem, createCachedFileSystem, type CachedFileSystemOptions } from '../promises/cached';
-import { MemFileSystem } from '../promises/memory';
+import { CachedFileSystem, createCachedFileSystem, type CachedFileSystemOptions } from '../src/promises/cached';
+import { AsyncTestFileSystem } from './fixtures/async-test-filesystem';
 
 describe('CachedFileSystem (Async)', () => {
-  let memFs: MemFileSystem;
+  let testFs: AsyncTestFileSystem;
   let cachedFs: CachedFileSystem;
 
   beforeEach(() => {
-    memFs = new MemFileSystem();
-    cachedFs = new CachedFileSystem(memFs);
+    testFs = new AsyncTestFileSystem();
+    cachedFs = new CachedFileSystem(testFs);
   });
 
   describe('caching configuration', () => {
     it('should use default options when none provided', () => {
-      const fs = new CachedFileSystem(memFs);
+      const fs = new CachedFileSystem(testFs);
       const stats = fs.getCacheStats();
       
       expect(stats.options.maxSize).toBe(100);
@@ -30,7 +30,7 @@ describe('CachedFileSystem (Async)', () => {
         cacheDirListing: false
       };
       
-      const fs = new CachedFileSystem(memFs, options);
+      const fs = new CachedFileSystem(testFs, options);
       const stats = fs.getCacheStats();
       
       expect(stats.options.maxSize).toBe(50);
@@ -40,7 +40,7 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should create filesystem with convenience function', () => {
-      const fs = createCachedFileSystem(memFs, { maxSize: 25 });
+      const fs = createCachedFileSystem(testFs, { maxSize: 25 });
       const stats = fs.getCacheStats();
       
       expect(stats.options.maxSize).toBe(25);
@@ -49,9 +49,9 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('read caching', () => {
     it('should cache file reads', async () => {
-      const spy = vi.spyOn(memFs, 'readFile');
+      const spy = vi.spyOn(testFs, 'readFile');
       
-      await memFs.writeFile('./test.txt', 'content');
+      await testFs.writeFile('./test.txt', 'content');
       
       // First read - should hit filesystem
       const content1 = await cachedFs.readFile('./test.txt');
@@ -65,8 +65,8 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should cache multiple files independently', async () => {
-      await memFs.writeFile('./file1.txt', 'content1');
-      await memFs.writeFile('./file2.txt', 'content2');
+      await testFs.writeFile('./file1.txt', 'content1');
+      await testFs.writeFile('./file2.txt', 'content2');
       
       const content1 = await cachedFs.readFile('./file1.txt');
       const content2 = await cachedFs.readFile('./file2.txt');
@@ -79,10 +79,10 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should respect TTL and expire cached entries', async () => {
-      const shortTtlFs = new CachedFileSystem(memFs, { ttl: 10 }); // 10ms TTL
-      const spy = vi.spyOn(memFs, 'readFile');
+      const shortTtlFs = new CachedFileSystem(testFs, { ttl: 10 }); // 10ms TTL
+      const spy = vi.spyOn(testFs, 'readFile');
       
-      await memFs.writeFile('./test.txt', 'content');
+      await testFs.writeFile('./test.txt', 'content');
       
       // First read
       await shortTtlFs.readFile('./test.txt');
@@ -99,8 +99,8 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('exists caching', () => {
     it('should cache existence checks when enabled', async () => {
-      await memFs.writeFile('./test.txt', 'content');
-      const spy = vi.spyOn(memFs, 'exists');
+      await testFs.writeFile('./test.txt', 'content');
+      const spy = vi.spyOn(testFs, 'exists');
       
       // First check - should hit filesystem
       const exists1 = await cachedFs.exists('./test.txt');
@@ -114,9 +114,9 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should not cache existence checks when disabled', async () => {
-      const fs = new CachedFileSystem(memFs, { cacheExists: false });
-      await memFs.writeFile('./test.txt', 'content');
-      const spy = vi.spyOn(memFs, 'exists');
+      const fs = new CachedFileSystem(testFs, { cacheExists: false });
+      await testFs.writeFile('./test.txt', 'content');
+      const spy = vi.spyOn(testFs, 'exists');
       
       await fs.exists('./test.txt');
       await fs.exists('./test.txt');
@@ -125,7 +125,7 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should cache non-existence as well', async () => {
-      const spy = vi.spyOn(memFs, 'exists');
+      const spy = vi.spyOn(testFs, 'exists');
       
       // First check - file doesn't exist
       const exists1 = await cachedFs.exists('./nonexistent.txt');
@@ -141,11 +141,11 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('directory listing caching', () => {
     it('should cache directory listings when enabled', async () => {
-      const spy = vi.spyOn(memFs, 'readDir');
+      const spy = vi.spyOn(testFs, 'readDir');
       
-      await memFs.ensureDir('./testdir');
-      await memFs.writeFile('./testdir/file1.txt', 'content1');
-      await memFs.writeFile('./testdir/file2.txt', 'content2');
+      await testFs.ensureDir('./testdir');
+      await testFs.writeFile('./testdir/file1.txt', 'content1');
+      await testFs.writeFile('./testdir/file2.txt', 'content2');
       
       // First read - should hit filesystem
       const entries1 = await cachedFs.readDir('./testdir');
@@ -160,10 +160,10 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should not cache directory listings when disabled', async () => {
-      const fs = new CachedFileSystem(memFs, { cacheDirListing: false });
-      const spy = vi.spyOn(memFs, 'readDir');
+      const fs = new CachedFileSystem(testFs, { cacheDirListing: false });
+      const spy = vi.spyOn(testFs, 'readDir');
       
-      await memFs.ensureDir('./testdir');
+      await testFs.ensureDir('./testdir');
       
       await fs.readDir('./testdir');
       await fs.readDir('./testdir');
@@ -174,7 +174,7 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('cache invalidation', () => {
     it('should update cache on write operations', async () => {
-      const readSpy = vi.spyOn(memFs, 'readFile');
+      const readSpy = vi.spyOn(testFs, 'readFile');
       
       // Write file and read it
       await cachedFs.writeFile('./test.txt', 'original');
@@ -190,7 +190,7 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should invalidate cache on file deletion', async () => {
-      const readSpy = vi.spyOn(memFs, 'readFile');
+      const readSpy = vi.spyOn(testFs, 'readFile');
       
       await cachedFs.writeFile('./test.txt', 'content');
       await cachedFs.readFile('./test.txt'); // Cache it
@@ -203,16 +203,16 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should invalidate directory cache when files are added', async () => {
-      const dirSpy = vi.spyOn(memFs, 'readDir');
+      const dirSpy = vi.spyOn(testFs, 'readDir');
       
       // Ensure directory exists first (this may call readDir internally)
       await cachedFs.ensureDir('./testdir');
       
       // Ensure directory is empty first
-      const initialFiles = await memFs.readDir('./testdir');
+      const initialFiles = await testFs.readDir('./testdir');
       // Clear any existing files
       for (const file of initialFiles) {
-        await memFs.deleteFile(`./testdir/${file}`);
+        await testFs.deleteFile(`./testdir/${file}`);
       }
       
       // Reset spy after setup to count only our test calls
@@ -233,7 +233,7 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should manually invalidate specific files', async () => {
-      const readSpy = vi.spyOn(memFs, 'readFile');
+      const readSpy = vi.spyOn(testFs, 'readFile');
       
       await cachedFs.writeFile('./test.txt', 'content');
       await cachedFs.readFile('./test.txt'); // Cache it
@@ -267,7 +267,7 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('LRU eviction', () => {
     it('should evict least recently used entries when cache is full', async () => {
-      const smallCacheFs = new CachedFileSystem(memFs, { maxSize: 2 });
+      const smallCacheFs = new CachedFileSystem(testFs, { maxSize: 2 });
       
       // Fill cache to capacity
       await smallCacheFs.writeFile('./file1.txt', 'content1');
@@ -291,7 +291,7 @@ describe('CachedFileSystem (Async)', () => {
     });
 
     it('should update access order on cache hits', async () => {
-      const smallCacheFs = new CachedFileSystem(memFs, { maxSize: 2 });
+      const smallCacheFs = new CachedFileSystem(testFs, { maxSize: 2 });
       
       await smallCacheFs.writeFile('./file1.txt', 'content1');
       await smallCacheFs.writeFile('./file2.txt', 'content2');
@@ -363,7 +363,7 @@ describe('CachedFileSystem (Async)', () => {
       
       // Directory operations
       await cachedFs.ensureDir('./newdir');
-      expect(await memFs.exists('./newdir')).toBe(true);
+      expect(await testFs.exists('./newdir')).toBe(true);
       
       await cachedFs.writeFile('./newdir/file.txt', 'content');
       const dirEntries = await cachedFs.readDir('./newdir');
@@ -376,8 +376,10 @@ describe('CachedFileSystem (Async)', () => {
       await cachedFs.deleteFile(filePath);
       expect(await cachedFs.exists(filePath)).toBe(false);
       
+      // Delete directory contents first, then directory
+      await cachedFs.deleteFile('./newdir/file.txt');
       await cachedFs.deleteDir('./newdir');
-      expect(await memFs.exists('./newdir')).toBe(false);
+      expect(await testFs.exists('./newdir')).toBe(false);
     });
 
     it('should handle clear operation if available', async () => {
@@ -396,7 +398,7 @@ describe('CachedFileSystem (Async)', () => {
 
   describe('edge cases', () => {
     it('should handle concurrent access to same file', async () => {
-      const spy = vi.spyOn(memFs, 'readFile');
+      const spy = vi.spyOn(testFs, 'readFile');
       
       await cachedFs.writeFile('./test.txt', 'content');
       

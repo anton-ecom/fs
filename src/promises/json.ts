@@ -1,4 +1,4 @@
-import type { IAsyncFileSystem } from "./filesystem.interface";
+import type { IAsyncFileSystem } from "../../../fs-github/src/filesystem.interface";
 
 /**
  * Type-safe async JSON filesystem that automatically handles JSON parsing/stringification
