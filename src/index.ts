@@ -6,12 +6,12 @@ export type {
   SyncFilesystemBackendType,
   SyncFilesystemBackendOptions,
   SyncFilesystemConfig,
-} from "./filesystem-unit";
+} from "./filesystem.unit";
 export type {
   AsyncFilesystemBackendType,
   AsyncFilesystemBackendOptions,
   AsyncFilesystemConfig,
-} from "./promises/async-filesystem-unit";
+} from "./promises/async-filesystem.unit";
 
 // Core interfaces
 export { IFileSystem } from "./filesystem.interface";

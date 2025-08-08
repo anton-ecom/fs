@@ -1,6 +1,6 @@
 {
   "name": "@synet/fs",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Robust, battle-tested filesystem abstraction for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -68,12 +68,12 @@
   "homepage": "https://synthetism.ai",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.850.0",
+    "@aws-sdk/client-s3": "^3.862.0",
     "@azure/storage-blob": "^12.28.0",
     "@google-cloud/storage": "^7.16.0",
     "@octokit/rest": "^22.0.0",
     "@synet/patterns": "^2.1.7",
-    "@synet/unit": "^1.0.5",
-    "memfs": "^4.17.2"
+    "@synet/unit": "^1.0.7",
+    "memfs": "^4.36.0"
   }
 }

@@ -8,9 +8,13 @@
 import {
   type TeachingContract,
   Unit,
+  type UnitCore,
   type UnitProps,
   UnitSchema,
   createUnitSchema,
+  Capabilities,
+  Schema,
+  Validator
 } from "@synet/unit";
 import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
 
@@ -76,6 +80,8 @@ interface AsyncFileSystemProps extends UnitProps {
   };
 }
 
+const VERSION = "1.0.9";
+
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations
  */
@@ -85,6 +91,193 @@ export class AsyncFileSystem
 {
   protected constructor(props: AsyncFileSystemProps) {
     super(props);
+  }
+
+  /**
+   * Build consciousness trinity - creates living instances once
+   */
+  protected build(): UnitCore {
+    const capabilities = Capabilities.create(this.props.dna.id, {
+      readFile: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.readFile(params.path);
+      },
+      writeFile: (...args: unknown[]) => {
+        const params = args[0] as { path: string; data: string };
+        return this.writeFile(params.path, params.data);
+      },
+      exists: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.exists(params.path);
+      },
+      deleteFile: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.deleteFile(params.path);
+      },
+      readDir: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.readDir(params.path);
+      },
+      ensureDir: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.ensureDir(params.path);
+      },
+      deleteDir: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.deleteDir(params.path);
+      },
+      chmod: (...args: unknown[]) => {
+        const params = args[0] as { path: string; mode: number };
+        return this.chmod(params.path, params.mode);
+      },
+      stat: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.stat(params.path);
+      }
+    });
+
+    const schema = Schema.create(this.props.dna.id, {
+      readFile: {
+        name: 'readFile',
+        description: 'Read file content asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to read' }
+          },
+          required: ['path']
+        },
+        response: { type: 'string' }
+      },
+      writeFile: {
+        name: 'writeFile',
+        description: 'Write file content asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to write' },
+            data: { type: 'string', description: 'Data to write' }
+          },
+          required: ['path', 'data']
+        },
+        response: { type: 'void' }
+      },
+      exists: {
+        name: 'exists',
+        description: 'Check if file/directory exists asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Path to check' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      deleteFile: {
+        name: 'deleteFile',
+        description: 'Delete file asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to delete' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      readDir: {
+        name: 'readDir',
+        description: 'Read directory contents asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to read' }
+          },
+          required: ['path']
+        },
+        response: { type: 'array' }
+      },
+      ensureDir: {
+        name: 'ensureDir',
+        description: 'Ensure directory exists asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to ensure' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      deleteDir: {
+        name: 'deleteDir',
+        description: 'Delete directory asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to delete' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      chmod: {
+        name: 'chmod',
+        description: 'Set file permissions asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path' },
+            mode: { type: 'number', description: 'Permission mode' }
+          },
+          required: ['path', 'mode']
+        },
+        response: { type: 'void' }
+      },
+      stat: {
+        name: 'stat',
+        description: 'Get file statistics asynchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to stat' }
+          },
+          required: ['path']
+        },
+        response: { type: 'object' }
+      }
+    });
+
+    const validator = Validator.create({
+      unitId: this.props.dna.id,
+      capabilities,
+      schema,
+      strictMode: false
+    });
+
+    return { capabilities, schema, validator };
+  }
+
+  /**
+   * Get capabilities consciousness - returns living instance
+   */
+  capabilities(): Capabilities {
+    return this._unit.capabilities;
+  }
+
+  /**
+   * Get schema consciousness - returns living instance
+   */
+  schema(): Schema {
+    return this._unit.schema;
+  }
+
+  /**
+   * Get validator consciousness - returns living instance
+   */
+  validator(): Validator {
+    return this._unit.validator;
   }
 
   /**
@@ -98,7 +291,7 @@ export class AsyncFileSystem
     const props: AsyncFileSystemProps = {
       dna: createUnitSchema({
         id: "fs-async",
-        version: "1.0.0",
+        version: VERSION,
       }),
       backend,
       config,
@@ -237,38 +430,14 @@ export class AsyncFileSystem
   teach(): TeachingContract {
     return {
       unitId: this.props.dna.id,
-      capabilities: {
-        readFile: (...args: unknown[]) => this.readFile(args[0] as string),
-        writeFile: (...args: unknown[]) =>
-          this.writeFile(args[0] as string, args[1] as string),
-        exists: (...args: unknown[]) => this.exists(args[0] as string),
-        deleteFile: (...args: unknown[]) => this.deleteFile(args[0] as string),
-        readDir: (...args: unknown[]) => this.readDir(args[0] as string),
-        ensureDir: (...args: unknown[]) => this.ensureDir(args[0] as string),
-        deleteDir: (...args: unknown[]) => this.deleteDir(args[0] as string),
-        chmod: (...args: unknown[]) =>
-          this.chmod(args[0] as string, args[1] as number),
-        stat: (...args: unknown[]) => this.stat(args[0] as string),
-      },
+      capabilities: this._unit.capabilities,
+      schema: this._unit.schema,
+      validator: this._unit.validator
     };
   }
 
   whoami(): string {
     return `AsyncFileSystem[${this.props.dna.id}]`;
-  }
-
-  capabilities(): string[] {
-    return [
-      "readFile",
-      "writeFile",
-      "exists",
-      "deleteFile",
-      "readDir",
-      "ensureDir",
-      "deleteDir",
-      "chmod",
-      "stat",
-    ];
   }
 
   help(): void {

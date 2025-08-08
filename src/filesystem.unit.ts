@@ -9,9 +9,13 @@
 import {
   type TeachingContract,
   Unit,
+  type UnitCore,
   type UnitProps,
   UnitSchema,
   createUnitSchema,
+  Capabilities,
+  Schema,
+  Validator
 } from "@synet/unit";
 import type { IFileSystem } from "./filesystem.interface";
 
@@ -62,6 +66,7 @@ interface SyncFileSystemProps extends UnitProps {
   };
 }
 
+const VERSION = "1.0.9";
 /**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
@@ -71,6 +76,209 @@ export class FileSystem
 {
   protected constructor(props: SyncFileSystemProps) {
     super(props);
+  }
+
+  /**
+   * Build consciousness trinity - creates living instances once
+   */
+  protected build(): UnitCore {
+    const capabilities = Capabilities.create(this.props.dna.id, {
+      readFileSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.readFileSync(params.path);
+      },
+      writeFileSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string; data: string };
+        return this.writeFileSync(params.path, params.data);
+      },
+      existsSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.existsSync(params.path);
+      },
+      deleteFileSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.deleteFileSync(params.path);
+      },
+      readDirSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.readDirSync(params.path);
+      },
+      ensureDirSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.ensureDirSync(params.path);
+      },
+      deleteDirSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.deleteDirSync(params.path);
+      },
+      chmodSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string; mode: number };
+        return this.chmodSync(params.path, params.mode);
+      },
+      statSync: (...args: unknown[]) => {
+        const params = args[0] as { path: string };
+        return this.statSync(params.path);
+      },
+      clear: (...args: unknown[]) => {
+        const params = args[0] as { dirPath: string };
+        return this.clear(params.dirPath);
+      }
+    });
+
+    const schema = Schema.create(this.props.dna.id, {
+      readFileSync: {
+        name: 'readFileSync',
+        description: 'Read file content synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to read' }
+          },
+          required: ['path']
+        },
+        response: { type: 'string' }
+      },
+      writeFileSync: {
+        name: 'writeFileSync',
+        description: 'Write file content synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to write' },
+            data: { type: 'string', description: 'Data to write' }
+          },
+          required: ['path', 'data']
+        },
+        response: { type: 'void' }
+      },
+      existsSync: {
+        name: 'existsSync',
+        description: 'Check if file/directory exists synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Path to check' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      deleteFileSync: {
+        name: 'deleteFileSync',
+        description: 'Delete file synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to delete' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      readDirSync: {
+        name: 'readDirSync',
+        description: 'Read directory contents synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to read' }
+          },
+          required: ['path']
+        },
+        response: { type: 'array' }
+      },
+      ensureDirSync: {
+        name: 'ensureDirSync',
+        description: 'Ensure directory exists synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to ensure' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      deleteDirSync: {
+        name: 'deleteDirSync',
+        description: 'Delete directory synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to delete' }
+          },
+          required: ['path']
+        },
+        response: { type: 'void' }
+      },
+      chmodSync: {
+        name: 'chmodSync',
+        description: 'Set file permissions synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path' },
+            mode: { type: 'number', description: 'Permission mode' }
+          },
+          required: ['path', 'mode']
+        },
+        response: { type: 'void' }
+      },
+      statSync: {
+        name: 'statSync',
+        description: 'Get file statistics synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to stat' }
+          },
+          required: ['path']
+        },
+        response: { type: 'object' }
+      },
+      clear: {
+        name: 'clear',
+        description: 'Clear directory contents synchronously',
+        parameters: {
+          type: 'object',
+          properties: {
+            dirPath: { type: 'string', description: 'Directory path to clear' }
+          },
+          required: ['dirPath']
+        },
+        response: { type: 'void' }
+      }
+    });
+
+    const validator = Validator.create({
+      unitId: this.props.dna.id,
+      capabilities,
+      schema,
+      strictMode: false
+    });
+
+    return { capabilities, schema, validator };
+  }
+
+  /**
+   * Get capabilities consciousness - returns living instance
+   */
+  capabilities(): Capabilities {
+    return this._unit.capabilities;
+  }
+
+  /**
+   * Get schema consciousness - returns living instance
+   */
+  schema(): Schema {
+    return this._unit.schema;
+  }
+
+  /**
+   * Get validator consciousness - returns living instance
+   */
+  validator(): Validator {
+    return this._unit.validator;
   }
 
   /**
@@ -84,7 +292,7 @@ export class FileSystem
     const props: SyncFileSystemProps = {
       dna: createUnitSchema({
         id: "fs",
-        version: "1.0.0",
+        version: VERSION,
       }),
       backend,
       config,
@@ -223,43 +431,14 @@ export class FileSystem
   teach(): TeachingContract {
     return {
       unitId: this.props.dna.id,
-      capabilities: {
-        readFileSync: (...args: unknown[]) =>
-          this.readFileSync(args[0] as string),
-        writeFileSync: (...args: unknown[]) =>
-          this.writeFileSync(args[0] as string, args[1] as string),
-        existsSync: (...args: unknown[]) => this.existsSync(args[0] as string),
-        deleteFileSync: (...args: unknown[]) =>
-          this.deleteFileSync(args[0] as string),
-        readDirSync: (...args: unknown[]) =>
-          this.readDirSync(args[0] as string),
-        ensureDirSync: (...args: unknown[]) =>
-          this.ensureDirSync(args[0] as string),
-        deleteDirSync: (...args: unknown[]) =>
-          this.deleteDirSync(args[0] as string),
-        chmodSync: (...args: unknown[]) =>
-          this.chmodSync(args[0] as string, args[1] as number),
-        statSync: (...args: unknown[]) => this.statSync(args[0] as string),
-      },
+      capabilities: this._unit.capabilities,
+      schema: this._unit.schema,
+      validator: this._unit.validator
     };
   }
 
   whoami(): string {
     return `FileSystem[${this.props.dna.id}]`;
-  }
-
-  capabilities(): string[] {
-    return [
-      "readFileSync",
-      "writeFileSync",
-      "existsSync",
-      "deleteFileSync",
-      "readDirSync",
-      "ensureDirSync",
-      "deleteDirSync",
-      "chmodSync",
-      "statSync",
-    ];
   }
 
   help(): void {

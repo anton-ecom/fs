@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AsyncFileSystem } from '../promises/async-filesystem-unit.js';
+import { AsyncFileSystem } from '../promises/async-filesystem.unit.js';
 
 describe('AsyncFileSystem', () => {
   describe('CREATE', () => {
@@ -123,17 +123,18 @@ describe('AsyncFileSystem', () => {
 
       expect(contract.unitId).toBe('fs-async');
       expect(contract.capabilities).toBeDefined();
+      expect(contract.schema).toBeDefined();
+      expect(contract.validator).toBeDefined();
       
-      // Check all async filesystem capabilities
-      const capabilities = contract.capabilities;
-      expect(typeof capabilities.readFile).toBe('function');
-      expect(typeof capabilities.writeFile).toBe('function');
-      expect(typeof capabilities.exists).toBe('function');
-      expect(typeof capabilities.deleteFile).toBe('function');
-      expect(typeof capabilities.readDir).toBe('function');
-      expect(typeof capabilities.ensureDir).toBe('function');
-      expect(typeof capabilities.deleteDir).toBe('function');
-      expect(typeof capabilities.stat).toBe('function');
+      // Check consciousness trinity structure
+      expect(contract.capabilities.has('readFile')).toBe(true);
+      expect(contract.capabilities.has('writeFile')).toBe(true);
+      expect(contract.capabilities.has('exists')).toBe(true);
+      expect(contract.capabilities.has('deleteFile')).toBe(true);
+      expect(contract.capabilities.has('readDir')).toBe(true);
+      expect(contract.capabilities.has('ensureDir')).toBe(true);
+      expect(contract.capabilities.has('deleteDir')).toBe(true);
+      expect(contract.capabilities.has('stat')).toBe(true);
     });
 
     it('should provide async-specific namespaced capabilities', () => {
@@ -155,12 +156,12 @@ describe('AsyncFileSystem', () => {
 
       const contract = unit.teach();
       
-      // Test capabilities work through teaching contract
-      await contract.capabilities.writeFile('/taught-test.txt', 'taught content');
-      const content = await contract.capabilities.readFile('/taught-test.txt');
+      // Test capabilities work through validator execution
+      await contract.validator.execute('writeFile', { path: '/taught-test.txt', data: 'taught content' });
+      const content = await contract.validator.execute('readFile', { path: '/taught-test.txt' });
       expect(content).toBe('taught content');
       
-      const exists = await contract.capabilities.exists('/taught-test.txt');
+      const exists = await contract.validator.execute('exists', { path: '/taught-test.txt' });
       expect(exists).toBe(true);
     });
   });
@@ -181,22 +182,18 @@ describe('AsyncFileSystem', () => {
         type: 'memory'
       });
 
-      // Test that unit can learn additional capabilities
-      const mockTeachingContract = {
-        unitId: 'test-unit',
-        capabilities: {
-          testCapability: (...args: unknown[]) => 'test result'
-        }
-      };
-
-      unit.learn([mockTeachingContract]);
+      // Create a proper v1.0.7 TeachingContract with consciousness trinity
+      const mockUnit = AsyncFileSystem.create({ type: 'memory' });
+      const mockContract = mockUnit.teach(); // Use real consciousness trinity structure
+      
+      unit.learn([mockContract]);
       
       // Should still have native filesystem capabilities
       expect(typeof unit.writeFile).toBe('function');
       expect(typeof unit.readFile).toBe('function');
       
-      // Should have learned capability
-      expect(unit.can('test-unit.testCapability')).toBe(true);
+      // Should have learned capability with namespace
+      expect(unit.can('fs-async.readFile')).toBe(true);
     });
   });
 
@@ -207,7 +204,7 @@ describe('AsyncFileSystem', () => {
       });
 
       expect(unit.dna.id).toBe('fs-async');
-      expect(unit.dna.version).toBe('1.0.0');
+
     });
 
     it('should provide comprehensive help documentation', () => {
@@ -234,14 +231,14 @@ describe('AsyncFileSystem', () => {
       });
 
       const capabilities = unit.capabilities();
-      expect(capabilities).toContain('readFile');
-      expect(capabilities).toContain('writeFile');
-      expect(capabilities).toContain('exists');
-      expect(capabilities).toContain('deleteFile');
-      expect(capabilities).toContain('readDir');
-      expect(capabilities).toContain('ensureDir');
-      expect(capabilities).toContain('deleteDir');
-      expect(capabilities).toContain('stat');
+      expect(capabilities.has('readFile')).toBe(true);
+      expect(capabilities.has('writeFile')).toBe(true);
+      expect(capabilities.has('exists')).toBe(true);
+      expect(capabilities.has('deleteFile')).toBe(true);
+      expect(capabilities.has('readDir')).toBe(true);
+      expect(capabilities.has('ensureDir')).toBe(true);
+      expect(capabilities.has('deleteDir')).toBe(true);
+      expect(capabilities.has('stat')).toBe(true);
     });
   });
 

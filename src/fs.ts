@@ -16,8 +16,8 @@
  * ```
  */
 
-import { FileSystem } from "./filesystem-unit";
-import { AsyncFileSystem } from "./promises/async-filesystem-unit";
+import { FileSystem } from "./filesystem.unit";
+import { AsyncFileSystem } from "./promises/async-filesystem.unit";
 import type { AzureBlobStorageOptions } from "./promises/azure";
 import type { GCSFileSystemOptions } from "./promises/gcs";
 import type { GitHubFileSystemOptions } from "./promises/github";
@@ -161,12 +161,12 @@ export type {
   SyncFilesystemBackendType,
   SyncFilesystemBackendOptions,
   SyncFilesystemConfig,
-} from "./filesystem-unit";
+} from "./filesystem.unit";
 export type {
   AsyncFilesystemBackendType,
   AsyncFilesystemBackendOptions,
   AsyncFilesystemConfig,
-} from "./promises/async-filesystem-unit";
+} from "./promises/async-filesystem.unit";
 
 /**
  * Legacy compatibility - will be deprecated
