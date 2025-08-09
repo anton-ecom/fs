@@ -23,7 +23,7 @@
                     
                     
                                      
-version: v.1.1.0
+version: v.2.0.0
 description: Files are artefacts of identity
 ```
 
@@ -157,16 +157,16 @@ With strict interface, you choose your paradigm upfront and stick to it:
 ```typescript
 // ✅ GOOD: Consistent sync interface
 class SyncConfigService {
-  constructor(private fs: IFileSystem) {} // Always sync
+  constructor(private fs: FileSystem) {} // Always sync
   
   loadConfig(): Config {
-    return JSON.parse(this.fs.readFileSync('./config.json'));
+    return JSON.parse(this.fs.readFile('./config.json'));
   }
 }
 
 // ✅ GOOD: Consistent async interface  
 class AsyncConfigService {
-  constructor(private fs: IAsyncFileSystem) {} // Always async
+  constructor(private fs: AsyncFileSystem) {} // Always async
   
   async loadConfig(): Promise<Config> {
     const content = await this.fs.readFile('./config.json');
@@ -184,34 +184,61 @@ The FS pattern is built on two foundational **Units** that follow the Unit Archi
 #### FileSystem Unit (Sync)
 ```typescript
 import { FileSystem, NodeFileSystem } from '@synet/fs';
+import { MemFileSystem } from '@synet/fs-memory';
 
-const syncUnit = FileSystem.create({ type: "memory" });
+const syncUnit = FileSystem.create({ adapter: new NodeFileSystem() });
 const content = syncUnit.readFile('./file.txt'); // Returns string directly
+
+// Or with memory adapter
+const memSyncUnit = FileSystem.create({ adapter: new MemFileSystem() });
 ```
 
 #### AsyncFileSystem Unit (Async)
 ```typescript
-import { AsyncFileSystem, NodeFileSystem } from '@synet/fs/promises';
+import { AsyncFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
+import { MemFileSystem } from '@synet/fs-memory/promises';
 
-const asyncUnit = AsyncFileSystem.create({ type: "azure", options: azureConfig });
+const asyncUnit = AsyncFileSystem.create({ adapter: new AsyncNodeFileSystem() });
 const content = await asyncUnit.readFile('./file.txt'); // Returns Promise<string>
+
+// Or with memory adapter
+const memAsyncUnit = AsyncFileSystem.create({ adapter: new MemFileSystem() });
 ```
 
 ## Available Implementations
 
-`NodeFileSystem` (Sync/Async)
+### Clean FS Factory Usage
 
-Real filesystem implementation using Node.js `fs` module:// Synchronous
+The `FS` factory provides organized access to filesystem units:
+
+```typescript
+import { FS } from '@synet/fs';
+
+// Sync filesystems (local operations only)
+const syncFs = FS.sync.node();
+const content = syncFs.readFile('./file.txt'); // Returns string
+
+// Async filesystems (local and cloud)
+const asyncFs = FS.async.node();
+const content = await asyncFs.readFile('./file.txt'); // Returns Promise<string>
+```
+
+### `NodeFileSystem` (Sync/Async)
+NodeFileSystem included in `@synet/fs` package:
+
+```typescript
+// Synchronous
 import { NodeFileSystem, IFileSystem } from '@synet/fs';
 const syncFs = new NodeFileSystem();
 
 // Asynchronous
-import { NodeFileSystem, IAsyncFileSystem } from '@synet/fs/promises';
-const asyncFs = new NodeFileSystem();
+import { AsyncNodeFileSystem, IAsyncFileSystem } from '@synet/fs/promises';
+const asyncFs = new AsyncNodeFileSystem();
+```
 
-#### `MemFileSystem` (Sync/Async)
+### `MemFileSystem` (Sync/Async)
 
-In-memory filesystem for testing:
+In-memory filesystem for testing from separate `@synet/fs-memory` package:
 
 ```typescript
 // Synchronous
@@ -219,7 +246,7 @@ import { MemFileSystem } from '@synet/fs-memory';
 const memFs = new MemFileSystem();
 
 // Asynchronous
-import { MemFileSystem } from '@synet/fs-memory/promises/memory';
+import { MemFileSystem } from '@synet/fs-memory/promises';
 const asyncMemFs = new MemFileSystem();
 ```
 
@@ -231,8 +258,12 @@ The `ObservableFileSystem` wraps any base filesystem and emits events for monito
 // Synchronous Observable
 import { ObservableFileSystem, FilesystemEventTypes, NodeFileSystem } from '@synet/fs';
 
-// Or Async Observable
-import { ObservableFileSystem, NodeFileSystem} from '@synet/fs/promises';
+// Asynchronous Observable
+import { 
+  AsyncObservableFileSystem, 
+  AsyncFilesystemEventTypes, 
+  AsyncNodeFileSystem 
+} from '@synet/fs/promises';
 
 // Monitor specific operations
 const observableFs = new ObservableFileSystem(
@@ -240,8 +271,8 @@ const observableFs = new ObservableFileSystem(
   [FilesystemEventTypes.WRITE, FilesystemEventTypes.DELETE] // Only emit write/delete events
 );
 
-// Monitor all operations
-const observableFs = new ObservableFileSystem(new NodeFileSystem());
+// Monitor all operations (async)
+const asyncObservableFs = new AsyncObservableFileSystem(new AsyncNodeFileSystem());
 
 // Listen to events
 observableFs.getEventEmitter().subscribe(FilesystemEventTypes.WRITE, {
@@ -276,7 +307,7 @@ const fileRegistry = new Map<string, string>(); // ID -> filename
 
 ```typescript
 // ✅ Best of both worlds
-import { WithIdFileSystem, FileFormat } from '@synet/fs';
+import { WithIdFileSystem, FileFormat, NodeFileSystem } from '@synet/fs';
 
 const withIdFs = new WithIdFileSystem(new NodeFileSystem());
 
@@ -329,9 +360,9 @@ app.get('/avatar/:userId', async (req, res) => {
 #### Async Usage
 
 ```typescript
-import { WithIdFileSystem } from '@synet/fs/promises';
+import { AsyncWithIdFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
 
-const asyncWithIdFs = new WithIdFileSystem(new AsyncNodeFileSystem());
+const asyncWithIdFs = new AsyncWithIdFileSystem(new AsyncNodeFileSystem());
 
 // All operations are async
 await asyncWithIdFs.writeFile('./data.json', jsonData);
@@ -339,11 +370,17 @@ const id = asyncWithIdFs.getId('./data.json'); // Still sync - metadata only
 const content = await asyncWithIdFs.getByIdOrAlias(id, FileFormat.JSON);
 ```
 
-### GitHubFileSystem (Sync/Async)
+### GitHubFileSystem (Async)
 
 **Version-controlled file storage using GitHub repositories with automatic commit and sync**
 
 What if you could use GitHub as a simple file storage with automatic version control? Tired of manually managing config files, documentation, or small datasets across environments? `GitHubFileSystem` turns any GitHub repository into a seamless filesystem with automatic commits, intelligent caching, and full version history.
+
+Available as separate package `@synet/fs-github`:
+
+```bash
+npm install @synet/fs-github
+```
 
 #### Before
 
@@ -369,7 +406,7 @@ Just use github.
 
 ```typescript
 // ✅ Automatic version control with meaningful commits
-import { GitHubFileSystem } from '@synet/fs/promises';
+import { GitHubFileSystem } from '@synet/fs-github';
 
 const ghFs = new GitHubFileSystem({
   owner: 'myorg',
@@ -395,67 +432,56 @@ const files = ghFs.readdir('./');
 - **Automatic Commits**: Every write operation creates a meaningful commit
 - **Intelligent Caching**: LRU cache with TTL to minimize API calls
 - **Path Normalization**: Works with relative and absolute paths
-- **Full IFileSystem Compatibility**: Drop-in replacement for any filesystem
+- **Full IAsyncFileSystem Compatibility**: Drop-in replacement for any async filesystem
 - **Error Handling**: Graceful handling of network issues and API limits
 - **Version History**: Access to full Git history and file metadata
 
 #### Usage
 
 ```typescript
-const configFs = new GitHubFileSystem({
-  owner: 'mycompany',
-  repo: 'app-configs',
-  token: process.env.GITHUB_TOKEN,
-  path: 'production',
-  branch: 'main'
+import { GitHubFileSystem } from '@synet/fs-github';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+// Use as adapter in FileSystem Unit
+const configFs = AsyncFileSystem.create({ 
+  adapter: new GitHubFileSystem({
+    owner: 'mycompany',
+    repo: 'app-configs',
+    token: process.env.GITHUB_TOKEN,
+    path: 'production',
+    branch: 'main'
+  })
 });
 
 // Store application config
-configFs.writeFileSync('./app.json', JSON.stringify({
+await configFs.writeFile('./app.json', JSON.stringify({
   database: { host: 'prod-db.example.com' },
   redis: { url: 'redis://prod-redis:6379' }
 }));
 
 // Load config from GitHub (cached automatically)
-const config = JSON.parse(configFs.readFileSync('./app.json'));
+const config = JSON.parse(await configFs.readFile('./app.json'));
 
 // Manage documentation
-configFs.ensureDirSync('./docs');
-configFs.writeFileSync('./docs/deployment.md', deploymentGuide);
+await configFs.ensureDir('./docs');
+await configFs.writeFile('./docs/deployment.md', deploymentGuide);
 
 // Check what files exist
-const hasConfig = configFs.existsSync('./app.json');
-const allFiles = configFs.readdirSync('./');
+const hasConfig = await configFs.exists('./app.json');
+const allFiles = await configFs.readDir('./');
 ```
 
-#### Async Usage
-
-```typescript
-import { GitHubFileSystem } from '@synet/fs/promises';
-
-const asyncGhFs = new GitHubFileSystem({
-  owner: 'myorg', 
-  repo: 'data-store',
-  token: process.env.GITHUB_TOKEN
-});
-
-// All operations are async with additional features
-await asyncGhFs.writeFile('./users.json', JSON.stringify(users));
-const content = await asyncGhFs.readFile('./users.json');
-
-// Access file history and repo stats
-const history = await asyncGhFs.getFileHistory('./users.json');
-const stats = await asyncGhFs.getRepoStats();
-
-console.log(`File modified ${history.length} times`);
-console.log(`Repository has ${stats.totalFiles} files`);
-```
-
-### S3FileSystem (Sync/Async)
+### S3FileSystem (Async)
 
 **AWS S3 cloud storage with local filesystem interface and intelligent caching**
 
 Need to store files in the cloud but want to keep using the familiar filesystem interface? `S3FileSystem` makes AWS S3 feel like a local drive with smart caching, automatic content type detection, and seamless bucket operations. Perfect for cloud-native applications that need scalable file storage without the complexity.
+
+Available as separate package `@synet/fs-s3`:
+
+```bash
+npm install @synet/fs-s3
+```
 
 #### Perfect For
 
@@ -468,34 +494,39 @@ Need to store files in the cloud but want to keep using the familiar filesystem 
 #### Basic Usage
 
 ```typescript
-import { S3FileSystem } from '@synet/fs';
+import { S3FileSystem } from '@synet/fs-s3';
+import { AsyncFileSystem } from '@synet/fs/promises';
 
-// Simple setup with default credentials
-const s3fs = new S3FileSystem({
-  region: 'us-east-1',
-  bucket: 'my-app-files'
+// Use as adapter in FileSystem Unit
+const s3fs = AsyncFileSystem.create({
+  adapter: new S3FileSystem({
+    region: 'us-east-1',
+    bucket: 'my-app-files'
+  })
 });
 
 // Write files to S3 like local filesystem
-s3fs.writeFileSync('config/app.json', JSON.stringify(config));
-s3fs.writeFileSync('uploads/image.jpg', imageBuffer);
+await s3fs.writeFile('config/app.json', JSON.stringify(config));
+await s3fs.writeFile('uploads/image.jpg', imageBuffer);
 
 // Read files from S3
-const config = JSON.parse(s3fs.readFileSync('config/app.json'));
-const exists = s3fs.existsSync('uploads/image.jpg');
+const config = JSON.parse(await s3fs.readFile('config/app.json'));
+const exists = await s3fs.exists('uploads/image.jpg');
 
 // List S3 "directories"
-const files = s3fs.readDirSync('uploads/');
+const files = await s3fs.readDir('uploads/');
 
 // File operations
-const stats = s3fs.statSync('config/app.json');
+const stats = await s3fs.stat('config/app.json');
 console.log(`File size: ${stats.size} bytes`);
 ```
 
 #### Advanced Configuration
 
 ```typescript
-const s3fs = new S3FileSystem({
+import { S3FileSystem } from '@synet/fs-s3';
+
+const s3Adapter = new S3FileSystem({
   region: 'eu-west-1',
   bucket: 'production-storage',
   prefix: 'app-data/',           // All files prefixed with 'app-data/'
@@ -505,27 +536,9 @@ const s3fs = new S3FileSystem({
   forcePathStyle: true            // For non-AWS S3 services
 });
 
+const s3fs = AsyncFileSystem.create({ adapter: s3Adapter });
+
 // Files are stored at: s3://production-storage/app-data/...
-```
-
-#### Async Usage
-
-```typescript
-import { S3FileSystem } from '@synet/fs/promises';
-
-const asyncS3fs = new S3FileSystem({
-  region: 'us-west-2',
-  bucket: 'async-storage'
-});
-
-// All operations return promises
-await asyncS3fs.writeFile('data.json', jsonData);
-const content = await asyncS3fs.readFile('data.json');
-const files = await asyncS3fs.readDir('uploads/');
-const stats = await asyncS3fs.stat('important.pdf');
-
-// Smart caching - second read uses cache
-const cachedContent = await asyncS3fs.readFile('data.json'); // No S3 call
 ```
 
 #### Key Features
@@ -543,15 +556,24 @@ const cachedContent = await asyncS3fs.readFile('data.json'); // No S3 call
 
 Seamlessly integrate Azure Blob Storage into your application with the familiar filesystem API. Perfect for Azure-native applications that need scalable cloud storage without complexity.
 
-```typescript
-import { createAzureBlobFileSystem } from '@synet/fs/promises';
+Available as separate package `@synet/fs-azure`:
 
-const azureFS = createAzureBlobFileSystem({
+```bash
+npm install @synet/fs-azure
+```
+
+```typescript
+import { AzureBlobFileSystem } from '@synet/fs-azure';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+const azureAdapter = new AzureBlobFileSystem({
   accountName: 'mystorageaccount',
   accountKey: process.env.AZURE_STORAGE_KEY,
   containerName: 'mycontainer',
   prefix: 'app-data/' // Optional: namespace all files
 });
+
+const azureFS = AsyncFileSystem.create({ adapter: azureAdapter });
 
 // Use like any filesystem
 await azureFS.writeFile('config.json', JSON.stringify(config));
@@ -567,15 +589,24 @@ const files = await azureFS.readDir('uploads/');
 
 Store files in Google Cloud Storage with automatic authentication and intelligent caching. Ideal for GCP-native applications.
 
-```typescript
-import { createGoogleCloudFileSystem } from '@synet/fs/promises';
+Available as separate package `@synet/fs-gcs`:
 
-const gcsFS = createGoogleCloudFileSystem({
+```bash
+npm install @synet/fs-gcs
+```
+
+```typescript
+import { GoogleCloudFileSystem } from '@synet/fs-gcs';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+const gcsAdapter = new GoogleCloudFileSystem({
   projectId: 'my-gcp-project',
   bucketName: 'my-storage-bucket',
   keyFilename: './path/to/service-account.json', // Optional
   prefix: 'app-files/' // Optional: namespace all files
 });
+
+const gcsFS = AsyncFileSystem.create({ adapter: gcsAdapter });
 
 // Standard filesystem operations
 await gcsFS.writeFile('documents/report.pdf', pdfBuffer);
@@ -591,10 +622,17 @@ const stats = await gcsFS.stat('documents/report.pdf');
 
 Leverage DigitalOcean Spaces for cost-effective object storage with built-in CDN and S3 compatibility.
 
-```typescript
-import { createDigitalOceanSpacesFileSystem } from '@synet/fs/promises';
+Available as separate package `@synet/fs-digitalocean`:
 
-const doFS = createDigitalOceanSpacesFileSystem({
+```bash
+npm install @synet/fs-digitalocean
+```
+
+```typescript
+import { DigitalOceanSpacesFileSystem } from '@synet/fs-digitalocean';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+const doAdapter = new DigitalOceanSpacesFileSystem({
   endpoint: 'https://sgp1.digitaloceanspaces.com',
   accessKeyId: process.env.DO_SPACES_KEY,
   secretAccessKey: process.env.DO_SPACES_SECRET,
@@ -603,9 +641,10 @@ const doFS = createDigitalOceanSpacesFileSystem({
   prefix: 'app-storage/' // Optional
 });
 
+const doFS = AsyncFileSystem.create({ adapter: doAdapter });
+
 // S3-compatible operations with DO Spaces benefits
 await doFS.writeFile('static/image.jpg', imageBuffer);
-const url = doFS.getPublicUrl('static/image.jpg'); // CDN URL
 const files = await doFS.readDir('static/');
 ```
 
@@ -617,10 +656,17 @@ const files = await doFS.readDir('static/');
 
 Store files in Cloudflare R2 with zero egress costs and global edge performance, perfect for high-traffic applications.
 
-```typescript
-import { createCloudflareR2FileSystem } from '@synet/fs/promises';
+Available as separate package `@synet/fs-cloudflare`:
 
-const r2FS = createCloudflareR2FileSystem({
+```bash
+npm install @synet/fs-cloudflare
+```
+
+```typescript
+import { CloudflareR2FileSystem } from '@synet/fs-cloudflare';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+const r2Adapter = new CloudflareR2FileSystem({
   accountId: 'your-cloudflare-account-id',
   accessKeyId: process.env.R2_ACCESS_KEY_ID,
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
@@ -629,10 +675,11 @@ const r2FS = createCloudflareR2FileSystem({
   prefix: 'content/' // Optional
 });
 
+const r2FS = AsyncFileSystem.create({ adapter: r2Adapter });
+
 // Zero egress costs for file operations
 await r2FS.writeFile('assets/logo.png', logoBuffer);
 const content = await r2FS.readFile('assets/logo.png');
-const bucketInfo = r2FS.getBucketInfo(); // R2-specific info
 ```
 
 **Key Features**: Zero egress fees, S3-compatible API, global edge performance, automatic scaling, integrated with Cloudflare Workers.
@@ -645,16 +692,25 @@ const bucketInfo = r2FS.getBucketInfo(); // R2-specific info
 
 Store files in Linode Object Storage with S3-compatible API, competitive pricing, and global edge distribution. Perfect for cost-effective cloud storage.
 
-```typescript
-import { createLinodeObjectStorageFileSystem } from '@synet/fs/promises';
+Available as separate package `@synet/fs-linode`:
 
-const linodeFS = createLinodeObjectStorageFileSystem({
+```bash
+npm install @synet/fs-linode
+```
+
+```typescript
+import { LinodeObjectStorageFileSystem } from '@synet/fs-linode';
+import { AsyncFileSystem } from '@synet/fs/promises';
+
+const linodeAdapter = new LinodeObjectStorageFileSystem({
   region: 'sg-sin-1',
   bucket: 'my-linode-bucket',
   accessKey: process.env.LINODE_ACCESS_KEY,
   secretKey: process.env.LINODE_SECRET_KEY,
   prefix: 'app-data/' // Optional
 });
+
+const linodeFS = AsyncFileSystem.create({ adapter: linodeAdapter });
 
 // Cost-effective file operations
 await linodeFS.writeFile('uploads/document.pdf', pdfBuffer);
@@ -672,10 +728,11 @@ const files = await linodeFS.readDir('uploads/');
 ### Async Usage
 
 ```typescript
-import { IAsyncFileSystem, AsyncNodeFileSystem, AsyncMemFileSystem } from './index';
+import { AsyncFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
+import { MemFileSystem } from '@synet/fs-memory/promises';
 
 class AsyncConfigService {
-  constructor(private fs: IAsyncFileSystem) {}
+  constructor(private fs: AsyncFileSystem) {}
   
   async loadConfig(): Promise<Config> {
     if (await this.fs.exists('./config.json')) {
@@ -691,55 +748,63 @@ class AsyncConfigService {
   }
 }
 
-// Usage
-const asyncConfigService = new AsyncConfigService(new AsyncNodeFileSystem());
+// Usage with Node filesystem
+const nodeFs = AsyncFileSystem.create({ adapter: new AsyncNodeFileSystem() });
+const asyncConfigService = new AsyncConfigService(nodeFs);
 const config = await asyncConfigService.loadConfig();
+
+// Usage with in-memory filesystem for testing
+const memFs = AsyncFileSystem.create({ adapter: new MemFileSystem() });
+const testConfigService = new AsyncConfigService(memFs);
 ```
 
 ### Sync Usage
 
 ```typescript
-import { IFileSystem } from './filesystem.interface';
-import { NodeFileSystem } from './filesystem';
-import { MemFileSystem } from './memory';
+import { FileSystem, NodeFileSystem, IFileSystem } from '@synet/fs';
+import { MemFileSystem } from '@synet/fs-memory';
 
 class ConfigService {
-  constructor(private fs: IFileSystem) {}
+  constructor(private fs: FileSystem) {}
   
   loadConfig(): Config {
-    if (this.fs.existsSync('./config.json')) {
-      const content = this.fs.readFileSync('./config.json');
+    if (this.fs.exists('./config.json')) {
+      const content = this.fs.readFile('./config.json');
       return JSON.parse(content);
     }
     return this.getDefaultConfig();
   }
   
   saveConfig(config: Config): void {
-    this.fs.ensureDirSync('./');
-    this.fs.writeFileSync('./config.json', JSON.stringify(config, null, 2));
+    this.fs.ensureDir('./');
+    this.fs.writeFile('./config.json', JSON.stringify(config, null, 2));
   }
 }
 
-// Production
-const configService = new ConfigService(new NodeFileSystem());
+// Production with Node filesystem
+const nodeFs = FileSystem.create({ adapter: new NodeFileSystem() });
+const configService = new ConfigService(nodeFs);
 
-// Testing
-const configService = new ConfigService(new MemFileSystem());
+// Testing with in-memory filesystem
+const memFs = FileSystem.create({ adapter: new MemFileSystem() });
+const testConfigService = new ConfigService(memFs);
 ```
 
 ### Testing with In-Memory Filesystem
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MemFileSystem } from './memory';
+import { FileSystem } from '@synet/fs';
+import { MemFileSystem } from '@synet/fs-memory';
 import { ConfigService } from '../services/config-service';
 
 describe('ConfigService', () => {
-  let fs: MemFileSystem;
+  let fs: FileSystem;
   let configService: ConfigService;
   
   beforeEach(() => {
-    fs = new MemFileSystem();
+    const memAdapter = new MemFileSystem();
+    fs = FileSystem.create({ adapter: memAdapter });
     configService = new ConfigService(fs);
   });
   
@@ -759,45 +824,50 @@ describe('ConfigService', () => {
 });
 ```
 
-## ** Complex Compositions ~Pyramids of Doom~  Examples**
+## **Complex Compositions ~Pyramids of Doom~ Examples**
 
 The real power comes from combining these (don't try this at home):
 
 ```typescript
+import { AsyncFileSystem } from '@synet/fs/promises';
+import { S3FileSystem } from '@synet/fs-s3';
+import { 
+  AsyncObservableFileSystem,
+  AsyncCachedFileSystem,
+  AsyncWithIdFileSystem 
+} from '@synet/fs/promises';
+
 // Ultimate production filesystem stack
-const productionFs = new RetryFileSystem(
-  new MetricsFileSystem(
-    new AuditFileSystem(
-      new CachedFileSystem(
-        new EncryptedFileSystem(
-          new CompressedFileSystem(
-            new S3FileSystem(s3Config)
-          )
-        )
-      )
+const s3Adapter = new S3FileSystem(s3Config);
+const productionFs = AsyncFileSystem.create({
+  adapter: new AsyncObservableFileSystem(
+    new AsyncCachedFileSystem(
+      new AsyncWithIdFileSystem(s3Adapter)
     )
   )
-);
+});
 
 // Development with mocking and debugging
-const devFs = new ReplayFileSystem(
-  new ObservableFileSystem(
-    new ValidatedFileSystem(
-      new MemFileSystem()
-    )
-  )
-);
+import { MemFileSystem } from '@synet/fs-memory/promises';
 
-// High-security vault
-const vaultFs = new AclFileSystem(
-  new SignedFileSystem(
-    new VersionedFileSystem(
-      new EncryptedFileSystem(
-        new AuditFileSystem(baseFs)
-      )
+const devFs = AsyncFileSystem.create({
+  adapter: new AsyncObservableFileSystem(
+    new MemFileSystem()
+  )
+});
+
+// Multi-cloud redundancy
+import { GitHubFileSystem } from '@synet/fs-github';
+import { AzureBlobFileSystem } from '@synet/fs-azure';
+
+const multiCloudFs = AsyncFileSystem.create({
+  adapter: new AsyncObservableFileSystem(
+    new AsyncCachedFileSystem(
+      new GitHubFileSystem(githubConfig) // Primary
+      // Could add fallback to Azure in decorator pattern
     )
   )
-);
+});
 ```
 
 ## Conclusion
@@ -825,6 +895,6 @@ Filesystems are far more flexible architectural solution than storing data in My
 
 > Data is new gold.
 
-Some of these features wont't be shared here. If you want some of them, [let me know](emailto:anton@synthetism.ai)
+Some of these features won't be shared here. If you want some of them, [let me know](mailto:anton@synthetism.ai)
 
 Stay tuned new versions or ask anything from [REQUESTS](https://github.com/synthetism/fs/blob/main/REQUESTS.md)

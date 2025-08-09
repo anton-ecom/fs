@@ -4,7 +4,31 @@ All notable changes to this project will be documented in this file.
 
 Most patterns are highly stable, no changes will be made to existing methods, only extended, but I will adhere to adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) just in case. You can safely upgrade, but as always, RTFM (read changelog for major releases).
 
+## [2.0.0] - 2025-08-09
 
+### BREAKING CHANGES
+
+- **Package separation**: Cloud adapters moved to separate packages (`@synet/fs-s3`, `@synet/fs-github`, etc.)
+- **Adapter pattern**: Units now use `adapter` property instead of `type` parameter
+- **Import changes**: Async classes renamed (e.g., `NodeFileSystem` → `AsyncNodeFileSystem` in `/promises`)
+
+### ACTION NEEDED
+
+```typescript
+// Before
+const fs = FileSystem.create({ type: "memory" });
+import { MemFileSystem } from '@synet/fs-memory/promises/memory';
+
+// After  
+const fs = FileSystem.create({ adapter: new NodeFileSystem() });
+import { MemFileSystem } from '@synet/fs-memory/promises';
+```
+
+### ADDED
+
+- Clean FS factory: `FS.sync.node()`, `FS.async.node()`
+- Separate adapter packages for better modularity
+- Improved documentation with correct import examples
 
 ## [1.0.8] - 2025-07-25
 
