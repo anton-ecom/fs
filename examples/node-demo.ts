@@ -15,7 +15,6 @@ export async function demonstrateNodeFilesystem() {
   const fs = FS.async.node(); // Use async version
   //const fs = nodeUnit.teach();
   
-  console.log('   Backend type:', fs.getBackendType());
   console.log('   Is async:', fs.isAsync());
   console.log('');
 
@@ -84,35 +83,8 @@ export async function demonstrateNodeFilesystem() {
 
   // 4. Performance and learning insights
   console.log('4. Performance insights...');
-  const stats = fs.getStats();
 
-  const pattern = fs.getUsagePattern();
-  const insights = fs.getPerformanceInsights();
 
-  console.log('   Operations performed:');
-  console.log(`   - Reads: ${stats.reads}`);
-  console.log(`   - Writes: ${stats.writes}`);
-  console.log(`   - Errors: ${stats.errors}`);
-  console.log(`   - Total: ${pattern.totalOperations}`);
-  console.log('');
-  console.log('   Performance insights:');
-  console.log(`   - Backend: ${insights.backendType}`);
-  console.log(`   - Async: ${insights.isAsync}`);
-  console.log(`   - Recommendation: ${insights.recommendation}`);
-  console.log('');
-
-  // 5. Test switching backends
-  console.log('5. Testing backend switching...');
-  console.log('   Current backend:', fs.teach().getBackendType());
-  
-  // Switch to memory for fast operations
-  fs.switchBackend({ type: 'memory' });
-  console.log('   Switched to:', fs.teach().getBackendType());
-
-  // Switch back to node
-  fs.switchBackend({ type: 'node' });
-  console.log('   Switched back to:', fs.teach().getBackendType());
-  console.log('');
 
   // 6. Cleanup
   console.log('6. Cleaning up demo files...');
@@ -142,8 +114,7 @@ export async function demonstrateNodeFilesystem() {
 export async function demonstrateAdvancedNodePatterns() {
   console.log('🚀 Advanced Node Filesystem Patterns\n');
 
-  const nodeUnit = FS.async.node();
-  const fs = nodeUnit.teach();
+  const fs = FS.async.node();
 
   // 1. Hierarchical identity storage
   console.log('1. Hierarchical identity storage...');
@@ -225,13 +196,6 @@ export async function demonstrateAdvancedNodePatterns() {
   console.log('   ✅ Created audit log entries');
   console.log('');
 
-  // 4. Show final stats
-  const finalStats = fs.getStats();
-  console.log('Final statistics:');
-  console.log(`   Total operations: ${finalStats.reads + finalStats.writes}`);
-  console.log(`   Files created: ${finalStats.writes}`);
-  console.log(`   Files read: ${finalStats.reads}`);
-  console.log('');
 
   console.log('✨ Advanced Node patterns demo complete!');
 }

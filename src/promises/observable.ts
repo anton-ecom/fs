@@ -1,5 +1,5 @@
 import { type Event, EventEmitter } from "@synet/patterns";
-import type { IAsyncFileSystem } from "./filesystem.interface";
+import type { IAsyncFileSystem } from "./async-filesystem.interface";
 
 export enum FilesystemEventTypes {
   EXISTS = "file.exists",

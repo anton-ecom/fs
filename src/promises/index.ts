@@ -1,7 +1,7 @@
 // @synet/fs/src/promises/index.ts
 
 // Asynchronous implementations
-export { IAsyncFileSystem } from "@synet/patterns/filesystem/promises";
+export type { IAsyncFileSystem } from "./async-filesystem.interface";
 export { NodeFileSystem } from "./node";
 export {
   ObservableFileSystem,

@@ -1,4 +1,4 @@
-import type { IAsyncFileSystem } from "./filesystem.interface";
+import type { IAsyncFileSystem } from "./async-filesystem.interface";
 
 /**
  * Cache configuration options

@@ -42,7 +42,7 @@ interface SyncFileSystemProps extends UnitProps {
   config: SyncFilesystemConfig;
 }
 
-const VERSION = "1.1.0";
+const VERSION = "2.0.0";
 /**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
@@ -264,7 +264,6 @@ export class FileSystem
     config: SyncFilesystemConfig,
   ): FileSystem {
  
-
     const props: SyncFileSystemProps = {
       dna: createUnitSchema({
         id: "fs",
@@ -302,35 +301,27 @@ export class FileSystem
    * Check if file/directory exists synchronously
    */
   existsSync(path: string): boolean {
-    try {
+ 
       const normalizedPath = this.normalizePath(path);
       return this.props.backend.existsSync(normalizedPath);
-    } catch (error) {
-      throw error;
-    }
+  
   }
 
   /**
    * Delete file synchronously
    */
   deleteFileSync(path: string): void {
-    try {
+
       const normalizedPath = this.normalizePath(path);
       this.props.backend.deleteFileSync(normalizedPath);
-    } catch (error) {
-      throw error;
-    }
+ 
   }
 
   /**
    * Read directory contents synchronously
    */
   readDirSync(path: string): string[] {
-    try {
       return this.props.backend.readDirSync(path);
-    } catch (error) {
-      throw error;
-    }
   }
 
   /**
@@ -344,13 +335,9 @@ export class FileSystem
   /**
    * Delete directory synchronously
    */
-  deleteDirSync(path: string): void {
-    try {
+  deleteDirSync(path: string): void { 
       const normalizedPath = this.normalizePath(path);
-      this.props.backend.deleteDirSync(normalizedPath);
-    } catch (error) {
-      throw error;
-    }
+      this.props.backend.deleteDirSync(normalizedPath);  
   }
 
   /**
@@ -369,7 +356,7 @@ export class FileSystem
     const result = this.props.backend.statSync?.(normalizedPath);
     if (!result) {
       throw new Error(
-        `statSync method not available on this backend`,
+        'statSync method not available on this backend',
       );
     }
     return result;
@@ -382,7 +369,7 @@ export class FileSystem
     const normalizedPath = this.normalizePath(dirPath);
     if (!this.props.backend.clear) {
       throw new Error(
-        `clear method not available on this backend`,
+        'clear method not available on this backend',
       );
     }
     this.props.backend.clear(normalizedPath);
@@ -457,13 +444,16 @@ When learned by other units:
     return false; // This unit is always sync
   }
 
-
   /**
    * Normalize path for backend compatibility
    */
   private normalizePath(path: string): string {
-    // Memory backend requires absolute paths   
-    return path.startsWith("/") ? path : `/${path}`;
-      
+    // Check if we're using a memory adapter by duck typing
+    if (this.props.backend.constructor.name === 'MemFileSystem') {
+      return path.startsWith("/") ? path : `/${path}`;
+    }
+
+    // Node, S3, GitHub and other adapters handle paths natively
+    return path;
   }
 }

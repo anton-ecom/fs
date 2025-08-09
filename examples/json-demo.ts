@@ -1,5 +1,5 @@
 import { JsonFileSystem } from '../src/json';
-import { MemFileSystem } from '../src/memory';
+import { MemFileSystem } from '../test/fixtures/memory';
 
 interface AppConfig {
   name: string;

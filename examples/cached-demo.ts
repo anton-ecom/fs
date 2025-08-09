@@ -1,5 +1,5 @@
 import { CachedFileSystem, createCachedFileSystem } from '../src/cached';
-import { MemFileSystem } from '../src/memory';
+import { MemFileSystem } from '../test/fixtures/memory';
 import { performance } from 'node:perf_hooks';
 
 console.log('⚡ CachedFileSystem Performance Demonstration\n');

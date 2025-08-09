@@ -1,5 +1,5 @@
 import { AnalyticsFileSystem, createAnalyticsFileSystem } from '../src/analytics';
-import { MemFileSystem } from '../src/memory';
+import { MemFileSystem } from '../test/fixtures/memory';
 
 /**
  * Demonstration of AnalyticsFileSystem capabilities

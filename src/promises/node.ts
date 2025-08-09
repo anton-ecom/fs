@@ -1,5 +1,5 @@
 import * as fs from "node:fs/promises";
-import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
+import type { FileStats, IAsyncFileSystem } from "./async-filesystem.interface";
 
 /**
  * Node.js implementation of FileSystem interface

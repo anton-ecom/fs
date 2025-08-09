@@ -24,7 +24,7 @@
                     
                                      
 version: v.2.0.0
-description: Files are artefacts of identity
+description: Files are the artefacts of identity
 ```
 
 **Installation**:

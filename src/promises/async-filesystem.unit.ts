@@ -15,8 +15,7 @@ import {
   type UnitCore,
   type UnitProps,
 } from "@synet/unit";
-import type { FileStats, IAsyncFileSystem } from "./filesystem.interface";
-
+import type { FileStats, IAsyncFileSystem } from "./async-filesystem.interface";
 
 /**
  * Async filesystem creation configuration
@@ -34,7 +33,7 @@ interface AsyncFileSystemProps extends UnitProps {
 
 }
 
-const VERSION = "1.0.9";
+const VERSION = "2.0.0";
 
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations
@@ -258,13 +257,15 @@ export class AsyncFileSystem
 
   /**
    * Normalize path for backend compatibility
-
    */
   private normalizePath(path: string): string {
-    // Memory backend requires absolute paths
+    // Check if we're using a memory adapter by duck typing
+    if (this.props.backend.constructor.name === 'MemFileSystem') {
+      return path.startsWith("/") ? path : `/${path}`;
+    }
 
-    return path.startsWith("/") ? path : `/${path}`;
-
+    // Node, S3, GitHub and other adapters handle paths natively
+    return path;
   }
 
   // ==========================================
@@ -298,13 +299,9 @@ export class AsyncFileSystem
   /**
    * Delete file asynchronously
    */
-  async deleteFile(path: string): Promise<void> {
-    try {
+  async deleteFile(path: string): Promise<void> { 
       const normalizedPath = this.normalizePath(path);
-      await this.props.backend.deleteFile(normalizedPath);
-    } catch (error) {
-      throw error;
-    }
+      await this.props.backend.deleteFile(normalizedPath); 
   }
 
   /**
@@ -347,7 +344,7 @@ export class AsyncFileSystem
     const result = await this.props.backend.stat?.(normalizedPath);
     if (!result) {
       throw new Error(
-        `stat method not available on this backend`,
+        'stat method not available on this backend',
       );
     }
     return result;
@@ -359,7 +356,7 @@ export class AsyncFileSystem
   async clear(dirPath: string): Promise<void> {
     if (!this.props.backend.clear) {
       throw new Error(
-        `clear method not available on this backend`,
+        'clear method not available on this backend',
       );
     }
     const normalizedPath = this.normalizePath(dirPath);

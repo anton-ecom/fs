@@ -1,5 +1,5 @@
 import { WithIdFileSystem, FileFormat } from '../src/with-id';
-import { MemFileSystem } from '../src/memory';
+import { MemFileSystem } from '../test/fixtures/memory';
 
 /**
  * Demonstration of WithIdFileSystem capabilities

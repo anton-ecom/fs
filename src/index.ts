@@ -1,3 +1,7 @@
+// Core interfaces
+export { IFileSystem } from "./filesystem.interface";
+export { IAsyncFileSystem } from "./promises/async-filesystem.interface";
+
 // Main filesystem units and factory
 export { FS } from "./fs";
 
@@ -6,14 +10,11 @@ export type {
   FileSystem,
   SyncFilesystemConfig,
 } from "./filesystem.unit";
+
 export type {
   AsyncFilesystemConfig,
   AsyncFileSystem,
 } from "./promises/async-filesystem.unit";
-
-// Core interfaces
-export { IFileSystem } from "./filesystem.interface";
-export { IAsyncFileSystem } from "./promises/filesystem.interface";
 
 
 // SYNC
@@ -25,6 +26,7 @@ export {
   FilesystemEventTypes,
   type FilesystemEvent,
 } from "./observable";
+
 export {
   JsonFileSystem,
   type JsonFileSystemOptions,
@@ -32,6 +34,7 @@ export {
   JsonStringifyError,
   JsonValidationError,
 } from "./json";
+
 export {
   AnalyticsFileSystem,
   createAnalyticsFileSystem,
@@ -41,11 +44,13 @@ export {
   type FileAction,
   type AnalyticsStatsEvent,
 } from "./analytics";
+
 export {
   WithIdFileSystem,
   FileFormat,
   type FileMetadata,
 } from "./with-id";
+
 export {
   CachedFileSystem,
   createCachedFileSystem,
