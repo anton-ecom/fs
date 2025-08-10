@@ -2,7 +2,9 @@
 
 // Asynchronous implementations
 export type { IAsyncFileSystem } from "./async-filesystem.interface";
+export { AsyncFileSystem } from "./async-filesystem.unit";
 export { NodeFileSystem } from "./node";
+
 export {
   ObservableFileSystem,
   FilesystemEventTypes,

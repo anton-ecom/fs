@@ -6,14 +6,14 @@ export { IAsyncFileSystem } from "./promises/async-filesystem.interface";
 export { FS } from "./fs";
 
 // Core types
-export type {
+export {
   FileSystem,
-  SyncFilesystemConfig,
+  type SyncFilesystemConfig,
 } from "./filesystem.unit";
 
-export type {
-  AsyncFilesystemConfig,
+export  {
   AsyncFileSystem,
+  type AsyncFilesystemConfig,
 } from "./promises/async-filesystem.unit";
 
 
