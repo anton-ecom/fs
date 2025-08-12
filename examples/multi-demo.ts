@@ -18,12 +18,14 @@ import {
   WithIdFileSystem,
   CachedFileSystem,
   ObservableFileSystem,
-  FilesystemEventTypes
+  FilesystemEventTypes,
+  type FilesystemEvent
 } from '../src/promises/index';
 
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import type { EventEmitter } from '@synet/patterns';
 
 // Demo configuration
 const DEMO_DIR = join(tmpdir(), 'synet-fs-demo');
@@ -79,7 +81,7 @@ async function setupDemo(): Promise<void> {
 
 async function createMultiLayerFileSystem(): Promise<{
   fs: AsyncFileSystem;
-  eventEmitter: any;
+  eventEmitter: EventEmitter<FilesystemEvent>;
   observableAdapter: ObservableFileSystem;
   withIdAdapter: WithIdFileSystem;
 }> {
@@ -119,11 +121,11 @@ async function createMultiLayerFileSystem(): Promise<{
   };
 }
 
-function setupEventMonitoring(eventEmitter: any): void {
+function setupEventMonitoring(eventEmitter: EventEmitter<FilesystemEvent>): void {
   console.log('\n👁️  Setting up event monitoring...');
   
   // Monitor all filesystem events
-  Object.values(FilesystemEventTypes).forEach(eventType => {
+  for (const eventType of Object.values(FilesystemEventTypes)) {
     eventEmitter.subscribe(eventType, {
       update(event) {
         const timestamp = new Date().toISOString();
@@ -136,7 +138,7 @@ function setupEventMonitoring(eventEmitter: any): void {
         }
       }
     });
-  });
+  }
   
   console.log('  ✅ Event monitoring active for all operations');
 }
@@ -235,7 +237,9 @@ async function demonstrateDirectoryOperations(fs: AsyncFileSystem): Promise<void
   // List all files
   const allFiles = await fs.readDir('.');
   console.log(`  📁 Root directory contains ${allFiles.length} items:`);
-  allFiles.forEach(file => console.log(`    - ${file}`));
+  for (const file of allFiles) {
+    console.log(`    - ${file}`);
+  }
   
   // Check existence
   console.log('\n  File existence checks:');
@@ -250,7 +254,7 @@ async function demonstrateDirectoryOperations(fs: AsyncFileSystem): Promise<void
     const configStats = await fs.stat(DEMO_FILES.config);
     console.log(`    Config file: ${configStats.size} bytes, modified: ${configStats.mtime?.toISOString()}`);
   } catch (error) {
-    console.log(`    ℹ️  File stats not available on this backend composition`);
+    console.log('    ℹ️  File stats not available on this backend composition');
   }
 }
 

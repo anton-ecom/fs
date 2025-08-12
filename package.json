@@ -1,6 +1,6 @@
 {
   "name": "@synet/fs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Robust, battle-tested filesystem abstraction for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -72,6 +72,6 @@
   "license": "MIT",
   "dependencies": {
     "@synet/patterns": "^2.1.7",
-    "@synet/unit": "^1.0.7"
+    "@synet/unit": "^1.0.8"
   }
 }
