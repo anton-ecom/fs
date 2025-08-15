@@ -147,11 +147,9 @@ describe('AnalyticsFileSystem (Async)', () => {
     it('should emit stats when threshold is reached', async () => {
       let emittedStats: Stats | null = null;
       const { instance, eventEmitter } = createAnalyticsFileSystem(memFs, { emitOn: 3 });
-      
-      eventEmitter.subscribe('analytics.stats', {
-        update(event: AnalyticsStatsEvent) {
-          emittedStats = event.data;
-        }
+
+      eventEmitter.on('analytics.stats', (event: AnalyticsStatsEvent) => {
+        emittedStats = event.data;
       });
       
       // Perform operations to reach threshold
@@ -167,11 +165,9 @@ describe('AnalyticsFileSystem (Async)', () => {
 
     it('should reset stats after emission', async () => {
       const { instance, eventEmitter } = createAnalyticsFileSystem(memFs, { emitOn: 2 });
-      
-      eventEmitter.subscribe('analytics.stats', {
-        update() {
-          // Event received
-        }
+
+      eventEmitter.on('analytics.stats', (event: AnalyticsStatsEvent) => {
+        // Event received
       });
       
       // Trigger first emission
@@ -195,11 +191,9 @@ describe('AnalyticsFileSystem (Async)', () => {
     it('should use default threshold of 100', async () => {
       let emissionCount = 0;
       const { instance, eventEmitter } = createAnalyticsFileSystem(memFs);
-      
-      eventEmitter.subscribe('analytics.stats', {
-        update() {
-          emissionCount++;
-        }
+
+      eventEmitter.on('analytics.stats', (event: AnalyticsStatsEvent) => {
+        emissionCount++;
       });
       
       // Perform 99 operations - should not emit
@@ -222,10 +216,8 @@ describe('AnalyticsFileSystem (Async)', () => {
       expect(eventEmitter).toBe(instance.getEventEmitter());
       
       let eventReceived = false;
-      eventEmitter.subscribe('analytics.stats', {
-        update() {
-          eventReceived = true;
-        }
+      eventEmitter.on('analytics.stats', (event: AnalyticsStatsEvent) => {
+        eventReceived = true;
       });
       
       await instance.writeFile('./test.txt', 'data');
@@ -254,7 +246,7 @@ describe('AnalyticsFileSystem (Async)', () => {
     it('should expose event emitter directly', () => {
       const eventEmitter = analyticsFs.getEventEmitter();
       expect(eventEmitter).toBeDefined();
-      expect(typeof eventEmitter.subscribe).toBe('function');
+      expect(typeof eventEmitter.on).toBe('function');
       expect(typeof eventEmitter.emit).toBe('function');
     });
   });

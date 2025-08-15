@@ -4,6 +4,71 @@ All notable changes to this project will be documented in this file.
 
 Most patterns are highly stable, no changes will be made to existing methods, only extended, but I will adhere to adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) just in case. You can safely upgrade, but as always, RTFM (read changelog for major releases).
 
+## [2.0.3] - 2025-08-15
+
+### BREAKING
+
+Onbservable filesystem now uses standard EventEmitter from @synet/unit. 
+
+**Streamlined type**
+
+```typescript 
+
+// imported from @synet/unit, compatible behaviour with all new units starting from @synet/unit@1.0.9
+
+export interface EventError {
+  message: string;           // Universal: error description
+  code?: string;            // Node.js: ENOENT, EACCES, etc. / Browser: could be HTTP codes
+  path?: string;            // File operations
+  syscall?: string;         // Node.js: 'open', 'write', etc.
+  errno?: number;           // Node.js: error number
+  stack?: string;           // Debug info (optional)
+}
+
+/**
+ * Base event interface
+ */
+export interface Event {
+  type: string;
+  timestamp: Date;
+  error?: EventError;
+}
+
+/**
+ * Filesystem Event e
+ */
+
+export interface FilesystemEvent extends Event {
+  type: FilesystemEventTypes;
+  data: {
+    filePath: string;
+    result?: unknown;
+  }
+}
+
+```
+
+**EventEmitter new interface**
+
+```typescript 
+export interface IEventEmitter<TEvent extends Event = Event> {
+  on<T extends TEvent>(type: string, handler: (event: T) => void): () => void;
+  once<T extends TEvent>(type: string, handler: (event: T) => void): () => void;
+  off(type: string): void;
+  emit(event: TEvent): void;
+  removeAllListeners(): void;
+  listenerCount(type: string): number;
+  eventTypes(): string[];
+}
+```
+
+### Changed 
+
+- Updated to Unit Architecture 1.0.9
+
+
+
+
 ## [2.0.1] - 2025-08-09
 
 ## Changed

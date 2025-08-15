@@ -23,150 +23,203 @@
                     
                     
                                      
-version: v.2.0.1
-description: Files are the artefacts of identity
+version: v.2.0.3
 ```
 
-**Installation**:
-
-```
-npm i @synet/fs
-```
-
-# Filesystem Pattern Implementations
-
-## Overview
-
-This pattern provides a consistent filesystem abstraction that enables dependency injection, testing, and observability across your applications. By abstracting filesystem operations behind interfaces, you can easily swap implementations, add functionality like caching or encryption, and monitor file operations. By consistently using patter of interface injection yoy avoid mixing sync and async in one component (Or else Zalgo is released).
-
-## Why Use This Over Traditional `fs`?
-
-### 1. **Dependency Injection & Testability**
-
-Traditional filesystem code is tightly coupled to Node.js `fs` module, making testing difficult:
+**Stop fighting with Node's filesystem.** Abstract files, test everything, teach AI agents to manage your data.
 
 ```typescript
-// ❌ Hard to test - tightly coupled to fs
+import { FileSystem } from '@synet/fs';
+
+// Works like you'd expect
+const fs = FileSystem.create({ adapter: new NodeFileSystem() });
+const content = fs.readFile('./config.json');
+
+// But then it scales...
+const agent = Smith.create({ ai });
+agent.learn([fs.teach()]); // Now Smith can manage files
+await agent.run("Organize all documents by date, create backup manifest");
+```
+
+## Why This Exists
+
+You've been there:
+- `fs.readFileSync()` scattered throughout your codebase
+- No easy way to test filesystem operations
+- Mixing sync and async operations unpredictably
+- Hard to add caching, encryption, or observability
+- Can't teach safe file operations to AI agents
+
+**This solves it.** Clean abstractions, dependency injection, predictable behavior.
+
+## When To Use This vs Raw fs
+
+**Use Node's `fs` when:**
+- Building a simple script  
+- One-off file operations
+- Maximum performance critical
+
+**Use `@synet/fs` when:**
+- Building with AI agents
+- Need testable file operations  
+- Want composable adapters
+- Working across multiple storage backends
+- Building production applications
+
+
+```bash
+npm install @synet/fs
+```
+
+## Real-World Examples
+
+### AI Agent File Management
+```typescript
+import { Smith } from '@synet/agent';
+import { createAIFileSystem } from '@synet/fs-ai';
+import { AsyncFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
+
+const baseFs = AsyncFileSystem.create({ 
+  adapter: new AsyncNodeFileSystem() 
+});
+
+// Create AI-safe filesystem with security boundaries
+const aiFs = createAIFileSystem(baseFs, {
+  homePath: process.cwd(),
+  allowedPaths: ['./data', './reports', './uploads'],
+  allowedOperations: ['readFile', 'writeFile', 'exists', 'ensureDir', 'readDir'],
+  readOnly: false,
+  maxDepth: 5
+});
+
+// Teach AI agents to manage files safely
+const agent = Smith.create({ ai });
+agent.learn([aiFs.teach()]);
+
+// Let AI organize your files
+await agent.run(`
+  1. Read all JSON files in ./data
+  2. Group them by date and category
+  3. Create organized folder structure
+  4. Generate summary report of file organization
+`);
+```
+
+### Testable File Operations
+```typescript
+import { FileSystem, NodeFileSystem } from '@synet/fs';
+import { MemFileSystem } from '@synet/fs-memory';
+
+class DocumentService {
+  constructor(private fs: FileSystem) {}
+  
+  saveDocument(name: string, content: string): void {
+    this.fs.ensureDir('./documents');
+    this.fs.writeFile(`./documents/${name}.md`, content);
+  }
+  
+  loadDocument(name: string): string | null {
+    const path = `./documents/${name}.md`;
+    return this.fs.exists(path) ? this.fs.readFile(path) : null;
+  }
+}
+
+// Production: Real filesystem
+const prodService = new DocumentService(
+  FileSystem.create({ adapter: new NodeFileSystem() })
+);
+
+// Testing: In-memory filesystem  
+const testService = new DocumentService(
+  FileSystem.create({ adapter: new MemFileSystem() })
+);
+```
+
+### Cloud Storage Made Simple
+```typescript
+import { AsyncFileSystem } from '@synet/fs/promises';
+import { S3FileSystem } from '@synet/fs-s3';
+import { GitHubFileSystem } from '@synet/fs-github';
+
+// S3 storage with local filesystem interface
+const s3Fs = AsyncFileSystem.create({
+  adapter: new S3FileSystem({
+    region: 'us-east-1',
+    bucket: 'my-app-storage'
+  })
+});
+
+// GitHub as file storage with version control
+const githubFs = AsyncFileSystem.create({
+  adapter: new GitHubFileSystem({
+    owner: 'myorg',
+    repo: 'configs',
+    token: process.env.GITHUB_TOKEN
+  })
+});
+
+// Same interface, different backends
+await s3Fs.writeFile('backup.json', data);
+await githubFs.writeFile('config.json', settings);
+```
+
+## Core Advantages
+
+### 1. **Clean Dependency Injection**
+```typescript
+// Before: Tightly coupled, hard to test
 import fs from 'node:fs';
 
-export class UserService {
+class UserService {
   saveUser(user: User) {
     fs.writeFileSync('/data/users.json', JSON.stringify(user));
   }
 }
-```
 
-With the abstraction:
+// After: Injectable, testable
+import { FileSystem } from '@synet/fs';
 
-```typescript
-// ✅ Easy to test - uses dependency injection
-import { IFileSystem } from '@synet/fs';
-
-export class UserService {
-  constructor(private fs: IFileSystem) {}
+class UserService {
+  constructor(private fs: FileSystem) {}
   
   saveUser(user: User) {
-
-    // ❌ Cant use that 
     this.fs.writeFile('/data/users.json', JSON.stringify(user));
- 
-    // ✅  Only sync methods available
-    this.fs.writeFileSync('/data/users.json', JSON.stringify(user));
-      
   }
 }
 ```
 
-Async and Sync can't be mixed in one component = predictable behaviour, no Zalgo surprises.
+### 2. **Predictable Behavior (No Zalgo)**
+Traditional filesystem code mixes sync and async unpredictably:
 
 ```typescript
-
-// ✅ Easy to test - uses dependency injection with predictable async. 
-import { IAsyncFileSystem } from '@synet/fs/promises';
-
-export class UserService {
-  constructor(private fs: IAsyncFileSystem) {}
-  
-  saveUser(user: User) {
-     
-     // ❌ Cant use that 
-     this.fs.writeFileSync('/data/users.json', JSON.stringify(user));
-
-    // ✅  Only Async methods available
-     this.fs.writeFile('/data/users.json', JSON.stringify(user));
-
-  }
-}
-```
-
-### 2. **Multiple Implementations**
-
-Easily switch between different storage backends:
-
-```typescript
-// Production: Use real filesystem
-const userService = new UserService(new NodeFileSystem());
-
-// Testing: Use in-memory filesystem
-const userService = new UserService(new MemFileSystem());
-
-// With observability: Monitor file operations
-const observableFs = new ObservableFileSystem(new NodeFileSystem());
-const userService = new UserService(observableFs);
-```
-
-### 3. **Composition & Decoration**
-
-Layer additional functionality without changing core logic:
-
-```typescript
-const baseFs = new NodeFileSystem();
-const observableFs = new ObservableFileSystem(baseFs);
-const encryptedFs = new EncryptedFileSystem(observableFs);
-const cachedFs = new CachedFileSystem(encryptedFs);
-
-// Now you have: caching + encryption + observability + real filesystem
-```
-
-### 4. Do Not Release Zalgo
-
-Traditional filesystem code often mixes sync and async operations within the same component, creating unpredictable behavior patterns a.k.a "[unleashing Zalgo](https://blog.izs.me/2013/08/designing-apis-for-asynchrony/)"
-
-```typescript
-// ❌ BAD: Mixed sync/async in one component
+// ❌ Zalgo released - unpredictable returns
 class BadConfigService {
   loadConfig(): Config | Promise<Config> {
     if (this.shouldUseCache()) {
-      // Synchronous path - returns immediately
-      return JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+      return JSON.parse(fs.readFileSync('./config.json', 'utf8')); // sync
     } else {
-      // Asynchronous path - returns Promise
-      return fs.promises.readFile('./config.json', 'utf8')
+      return fs.promises.readFile('./config.json', 'utf8') // async
         .then(content => JSON.parse(content));
     }
   }
 }
-
-// Consumer never knows what they'll get!
-const result = configService.loadConfig();
-// Is it Config or Promise<Config>? 🤷‍♂️
 ```
 
-With strict interface, you choose your paradigm upfront and stick to it:
+With strict interfaces, you choose once and stay consistent:
 
 ```typescript
-// ✅ GOOD: Consistent sync interface
+// ✅ Always sync
 class SyncConfigService {
-  constructor(private fs: FileSystem) {} // Always sync
+  constructor(private fs: FileSystem) {}
   
   loadConfig(): Config {
     return JSON.parse(this.fs.readFile('./config.json'));
   }
 }
 
-// ✅ GOOD: Consistent async interface  
+// ✅ Always async
 class AsyncConfigService {
-  constructor(private fs: AsyncFileSystem) {} // Always async
+  constructor(private fs: AsyncFileSystem) {}
   
   async loadConfig(): Promise<Config> {
     const content = await this.fs.readFile('./config.json');
@@ -175,30 +228,58 @@ class AsyncConfigService {
 }
 ```
 
-**Keep Zalgo locked away** - your components are predictable, your consumers know exactly what to expect, types enforce right behaviour on compile time.
+### 3. **Composable Adapters**
+Layer functionality without changing core logic:
 
-### FileSystem and AsyncFileSystem Units
+```typescript
+const baseFs = new NodeFileSystem();
+const observableFs = new ObservableFileSystem(baseFs);
+const cachedFs = new CachedFileSystem(observableFs);
 
-The FS pattern is built on two foundational **Units** that follow the Unit Architecture and Unit Driven Design best practices:
+// Now you have: caching + observability + real filesystem
+```
 
-#### FileSystem Unit (Sync)
+## Architecture Foundation
+
+Built on **Unit Architecture** - components that know themselves, teach capabilities, and compose intelligently.
+
+### FileSystem Unit (Sync)
 ```typescript
 import { FileSystem, NodeFileSystem } from '@synet/fs';
 import { MemFileSystem } from '@synet/fs-memory';
 
-const syncUnit = FileSystem.create({ adapter: new NodeFileSystem() });
-const content = syncUnit.readFile('./file.txt'); // Returns string directly
+const fs = FileSystem.create({ adapter: new NodeFileSystem() });
+const content = fs.readFile('./file.txt'); // Returns string directly
 
-// Or with memory adapter
-const memSyncUnit = FileSystem.create({ adapter: new MemFileSystem() });
+// Or with memory adapter for testing
+const memFs = FileSystem.create({ adapter: new MemFileSystem() });
 ```
 
-#### AsyncFileSystem Unit (Async)
+### AsyncFileSystem Unit (Async)
 ```typescript
 import { AsyncFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
 import { MemFileSystem } from '@synet/fs-memory/promises';
 
-const asyncUnit = AsyncFileSystem.create({ adapter: new AsyncNodeFileSystem() });
+const asyncFs = AsyncFileSystem.create({ adapter: new AsyncNodeFileSystem() });
+const content = await asyncFs.readFile('./file.txt'); // Returns Promise<string>
+```
+
+### AI-Safe Filesystem
+```typescript
+import { createAIFileSystem } from '@synet/fs-ai';
+
+const aiFs = createAIFileSystem(baseFs, {
+  homePath: process.cwd(),
+  allowedPaths: ['./data', './uploads'],
+  allowedOperations: ['readFile', 'writeFile', 'readDir'],
+  readOnly: false,
+  maxDepth: 3
+});
+
+// Teach AI agents to manage files safely
+const agent = Smith.create({ ai });
+agent.learn([aiFs.teach()]);
+
 const content = await asyncUnit.readFile('./file.txt'); // Returns Promise<string>
 
 // Or with memory adapter
@@ -209,7 +290,7 @@ const memAsyncUnit = AsyncFileSystem.create({ adapter: new MemFileSystem() });
 
 ### Clean FS Factory Usage
 
-The `FS` factory provides organized access to filesystem units:
+The `FS` factory provides quick access to filesystem units:
 
 ```typescript
 import { FS } from '@synet/fs';
@@ -275,9 +356,13 @@ const observableFs = new ObservableFileSystem(
 const asyncObservableFs = new AsyncObservableFileSystem(new AsyncNodeFileSystem());
 
 // Listen to events
-observableFs.getEventEmitter().subscribe(FilesystemEventTypes.WRITE, {
-  update(event) {
-    console.log(`File written: ${event.data.filePath}`);
+const events = observableFs.getEventEmitter();
+
+// Listen to filesystem events with Unit consciousness
+events.on((event) => {
+  console.log(`${event.type}: ${event.data.filePath}`);
+  if (event.error) {
+    console.log(`Error: ${event.error.message}`);
   }
 });
 ```
@@ -870,31 +955,46 @@ const multiCloudFs = AsyncFileSystem.create({
 });
 ```
 
-## Conclusion
+## What's Next
 
-Filesystems are far more flexible architectural solution than storing data in Mysql with far greater security and future extention options. When coupled with [Remote Event](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) you can observe, process and act on all filesystem requests - something can't be done with Mysql.
+```typescript
+import { Smith } from '@synet/agent';
+import { createAIFileSystem } from '@synet/fs-ai';
+import { AsyncFileSystem, AsyncNodeFileSystem } from '@synet/fs/promises';
 
- As mentioned before, I've developed High Security File System (HSFS) for enterprises and security firms:
+// AI Locked, can't mess with your filesystem, can do things autonomously
+const fs = AsyncFileSystem.create({ adapter: new AsyncNodeFileSystem() });
+const aiFs = createAIFileSystem(fs, {
+  homePath: process.cwd(),
+  allowedPaths: ['./'],
+  allowedOperations: ['readFile', 'writeFile', 'readDir', 'ensureDir']
+});
 
- **HSFS**:
+const agent = Smith.create({ ai });
+agent.learn([aiFs.teach()]);
 
-- Emit [remote events](https://github.com/synthetism/patterns/blob/main/docs/realtime/realtime-events.md) to NATS Broker who accessed files and why.
-- Mark classified files, protect access through 2FA/VC/NKeys.
-- Limit scope of  access with VCs and identity who wrote the file.
-- Keep history of access as part of the file.
-- Integiry checks, violation flags, time-limit, auto-destruct, penetration alerts, readonly, writeonly, indestructable with auto-restoring.
-- Selective disclosure protocols (text only), classification markings, traps (altered byte-sequencing/embedded ids for each read).
-- ZKF/ZKF - Zero Knowledge Files - proof you ownership without revealing its contents.
-- Passes - multi-user access with passwords. One-time, time-bound passwords.
-- KYC - Store structured history of access with schemas.
-- Multi-sig
-- Auto-backup
-- Multi-ACL - part is public, part is private, encrypted.
-- Artefacts - Signed indestructable files. Know who created the file with delete/rewrite protection.
-- Licensing
+// The future is AI agents that understand your filesystem
+await agent.run("Organize project files, create documentation index, backup important data");
 
-> Data is new gold.
+// Yes, it works
+```
 
-Some of these features won't be shared here. If you want some of them, [let me know](mailto:anton@synthetism.ai)
+Want to see more? Check out [@synet/agent](https://github.com/synthetism/agent) and [Unit Architecture](https://github.com/synthetism/unit).
 
-Stay tuned new versions or ask anything from [REQUESTS](https://github.com/synthetism/fs/blob/main/REQUESTS.md)
+## Advanced Features Available
+
+For enterprises and specialized use cases, we've developed **High Security File System (HSFS)** with features like:
+
+- **Access Control**: 2FA, verifiable credentials, identity-based permissions
+- **Audit Trails**: Complete access history with remote event streams
+- **File Integrity**: Checksum validation, tamper detection, auto-restore
+- **Zero Knowledge**: Prove ownership without revealing contents
+- **Multi-signature**: Require multiple approvals for sensitive operations
+- **Time Controls**: Auto-destruct, time-bound access, expiration
+
+*Some advanced features available separately. [Contact me](mailto:anton@synthetism.ai) for enterprise licensing.*
+
+## License
+
+MIT - Build whatever you want.
+

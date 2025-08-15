@@ -42,7 +42,7 @@ interface SyncFileSystemProps extends UnitProps {
   config: SyncFilesystemConfig;
 }
 
-const VERSION = "2.0.1";
+const VERSION = "2.0.2";
 /**
  * Sync Filesystem Unit - Pure synchronous filesystem operations
  */
@@ -268,6 +268,7 @@ export class FileSystem
       dna: createUnitSchema({
         id: "fs",
         version: VERSION,
+        description: "Sync filesystem unit, following node fs interface "
       }),
       backend: config.adapter,
       config,

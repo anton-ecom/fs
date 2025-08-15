@@ -33,10 +33,8 @@ describe('ConfigService with Filesystem Abstraction', () => {
       
       // Capture all events
       for (const eventType of Object.values(FilesystemEventTypes)) {
-        observableFs.getEventEmitter().subscribe(eventType, {
-          update(event: FilesystemEvent) {
-            events.push(event);
-          }
+        observableFs.getEventEmitter().on(eventType, (event: FilesystemEvent) => {
+          events.push(event);
         });
       }
     });
@@ -68,7 +66,6 @@ describe('ConfigService with Filesystem Abstraction', () => {
       // Check event data structure
       const writeEvent = writeEvents[0];
       expect(writeEvent.data.filePath).toBe('./app-config.json');
-      expect(writeEvent.data.operation).toBe('write');
       expect(writeEvent.data.result).toBeTypeOf('number'); // Content length
     });
     
@@ -81,11 +78,11 @@ describe('ConfigService with Filesystem Abstraction', () => {
       }
       
       const errorEvents = events.filter(e => 
-        e.type === FilesystemEventTypes.READ && e.data.error
+        e.type === FilesystemEventTypes.READ && e.error
       );
       
       expect(errorEvents.length).toBe(1);
-      expect(errorEvents[0].data.error).toBeDefined();
+      expect(errorEvents[0].error).toBeDefined();
       expect(errorEvents[0].data.filePath).toBe('./nonexistent-file.json');
     });
     
@@ -100,10 +97,8 @@ describe('ConfigService with Filesystem Abstraction', () => {
       
       // Subscribe to all event types
       for (const eventType of Object.values(FilesystemEventTypes)) {
-        selectiveFs.getEventEmitter().subscribe(eventType, {
-          update(event: FilesystemEvent) {
-            selectiveEvents.push(event);
-          }
+        selectiveFs.getEventEmitter().on(eventType, (event: FilesystemEvent) => {
+          selectiveEvents.push(event);
         });
       }
       

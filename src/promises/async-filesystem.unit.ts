@@ -33,7 +33,7 @@ interface AsyncFileSystemProps extends UnitProps {
 
 }
 
-const VERSION = "2.0.1";
+const VERSION = "2.0.2";
 
 /**
  * Async Filesystem Unit - Pure asynchronous filesystem operations

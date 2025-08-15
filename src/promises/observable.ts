@@ -1,4 +1,4 @@
-import { type Event, EventEmitter } from "@synet/patterns";
+import { type Event, EventEmitter } from "@synet/unit";
 import type { IAsyncFileSystem } from "./async-filesystem.interface";
 
 export enum FilesystemEventTypes {
@@ -16,18 +16,8 @@ export interface FilesystemEvent extends Event {
   type: FilesystemEventTypes;
   data: {
     filePath: string;
-    operation:
-      | "read"
-      | "write"
-      | "delete"
-      | "exists"
-      | "chmod"
-      | "ensureDir"
-      | "deleteDir"
-      | "readDir";
     result?: unknown;
-    error?: Error;
-  };
+  }
 }
 
 export class ObservableFileSystem implements IAsyncFileSystem {
@@ -57,9 +47,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.EXISTS,
           data: {
             filePath: filename,
-            operation: "exists",
             result,
           },
+          timestamp: new Date(),
         });
       }
 
@@ -69,10 +59,12 @@ export class ObservableFileSystem implements IAsyncFileSystem {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.EXISTS,
           data: {
-            filePath: filename,
-            operation: "exists",
-            error: error as Error,
+            filePath: filename
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+            },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -88,9 +80,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: "read",
             result: content.length,
           },
+           timestamp: new Date(),
         });
       }
 
@@ -101,9 +93,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: "read",
-            error: error as Error,
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+          },
+           timestamp: new Date(),
         });
       }
       throw error;
@@ -118,10 +112,10 @@ export class ObservableFileSystem implements IAsyncFileSystem {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.WRITE,
           data: {
-            filePath: filename,
-            operation: "write",
+            filePath: filename,            
             result: data.length,
-          },
+          },     
+           timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -130,9 +124,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: "write",
-            error: error as Error,
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -147,9 +143,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.DELETE,
           data: {
-            filePath: filename,
-            operation: "delete",
+            filePath: filename,           
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -158,9 +154,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: "delete",
-            error: error as Error,
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -175,9 +173,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
         this.eventEmitter.emit({
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
-            filePath: dirPath,
-            operation: "deleteDir",
+            filePath: dirPath,  
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -186,9 +184,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: "deleteDir",
-            error: error as Error,
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -204,8 +204,8 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: "ensureDir",
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -214,9 +214,12 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: "ensureDir",
-            error: error as Error,
+
           },
+          error: {
+              message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -232,9 +235,9 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: "readDir",
             result: result.length,
           },
+          timestamp: new Date(),
         });
       }
 
@@ -245,9 +248,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: "readDir",
-            error: error as Error,
           },
+          error: {
+             message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -263,9 +268,10 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: "chmod",
             result: mode,
           },
+          timestamp: new Date(),
+          
         });
       }
     } catch (error) {
@@ -274,9 +280,11 @@ export class ObservableFileSystem implements IAsyncFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: "chmod",
-            error: error as Error,
           },
+          error: {
+             message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;

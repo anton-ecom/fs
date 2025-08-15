@@ -1,5 +1,6 @@
-import { type Event, EventEmitter } from "@synet/patterns";
+import { type Event, EventEmitter } from "@synet/unit";
 import type { FileStats, IFileSystem } from "./filesystem.interface";
+
 export enum FilesystemEventTypes {
   EXISTS = "file.exists",
   READ = "file.read",
@@ -16,19 +17,8 @@ export interface FilesystemEvent extends Event {
   type: FilesystemEventTypes;
   data: {
     filePath: string;
-    operation:
-      | "read"
-      | "write"
-      | "delete"
-      | "exists"
-      | "chmod"
-      | "ensureDir"
-      | "deleteDir"
-      | "readDir"
-      | "stat";
     result?: unknown;
-    error?: Error;
-  };
+  }
 }
 
 export class ObservableFileSystem implements IFileSystem {
@@ -50,20 +40,36 @@ export class ObservableFileSystem implements IFileSystem {
   }
 
   existsSync(filename: string): boolean {
-    const result = this.baseFilesystem.existsSync(filename);
+    try {
+      const result = this.baseFilesystem.existsSync(filename);
 
-    if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
-      this.eventEmitter.emit({
-        type: FilesystemEventTypes.EXISTS,
-        data: {
-          filePath: filename,
-          operation: "exists",
-          result,
-        },
-      });
+      if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
+        this.eventEmitter.emit({
+          type: FilesystemEventTypes.EXISTS,
+          data: {
+            filePath: filename,
+            result,
+          },
+          timestamp: new Date(),
+        });
+      }
+
+      return result;
+    } catch (error) {
+      if (this.shouldEmit(FilesystemEventTypes.EXISTS)) {
+        this.eventEmitter.emit({
+          type: FilesystemEventTypes.EXISTS,
+          data: {
+            filePath: filename,
+          },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
+        });
+      }
+      throw error;
     }
-
-    return result;
   }
 
   readFileSync(filename: string): string {
@@ -75,9 +81,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: "read",
             result: content.length,
           },
+          timestamp: new Date(),
         });
       }
 
@@ -88,9 +94,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ,
           data: {
             filePath: filename,
-            operation: "read",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -106,9 +114,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: "write",
             result: data.length,
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -117,9 +125,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.WRITE,
           data: {
             filePath: filename,
-            operation: "write",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -135,8 +145,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: "delete",
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -145,9 +155,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE,
           data: {
             filePath: filename,
-            operation: "delete",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -163,8 +175,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: "deleteDir",
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -173,9 +185,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.DELETE_DIR,
           data: {
             filePath: dirPath,
-            operation: "deleteDir",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -191,8 +205,8 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: "ensureDir",
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -201,9 +215,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.ENSURE_DIR,
           data: {
             filePath: dirPath,
-            operation: "ensureDir",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -219,9 +235,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: "readDir",
             result: result.length,
           },
+          timestamp: new Date(),
         });
       }
 
@@ -232,9 +248,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.READ_DIR,
           data: {
             filePath: dirPath,
-            operation: "readDir",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -250,9 +268,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: "chmod",
             result: mode,
           },
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -261,9 +279,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.CHMOD,
           data: {
             filePath: path,
-            operation: "chmod",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;
@@ -283,9 +303,9 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.STAT,
           data: {
             filePath: path,
-            operation: "stat",
             result: result.size,
           },
+          timestamp: new Date(),
         });
       }
 
@@ -296,9 +316,11 @@ export class ObservableFileSystem implements IFileSystem {
           type: FilesystemEventTypes.STAT,
           data: {
             filePath: path,
-            operation: "stat",
-            error: error as Error,
           },
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timestamp: new Date(),
         });
       }
       throw error;

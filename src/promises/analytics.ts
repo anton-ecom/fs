@@ -1,4 +1,4 @@
-import { type Event, EventEmitter } from "@synet/patterns";
+import { type Event, EventEmitter } from "@synet/unit";
 import type { IAsyncFileSystem } from "./async-filesystem.interface";
 
 /**
@@ -115,6 +115,7 @@ export class AnalyticsFileSystem implements IAsyncFileSystem {
     this.eventEmitter.emit({
       type: "analytics.stats",
       data: currentStats,
+      timestamp: new Date(),
     });
 
     // Reset analytics data
